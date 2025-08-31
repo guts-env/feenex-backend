@@ -18,11 +18,15 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     return this.pool.end();
   }
 
+  getClient() {
+    return this.pool.connect();
+  }
+
   async query<T extends QueryResultRow = any>(
     text: string,
     params: any[] = [],
   ): Promise<QueryResult<T>> {
-    const client = await this.pool.connect();
+    const client = await this.getClient();
     try {
       const result = await client.query(text, params);
       return result;

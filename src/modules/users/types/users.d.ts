@@ -1,15 +1,14 @@
-export interface BaseUser {
+import { BaseRepository } from '@/modules/base/base.repository';
+
+export interface CreateUserInput {
   email: string;
-  password: string;
+  hashed_password: string;
 }
 
-export interface User extends BaseUser {
+export interface User extends BaseRepository {
   id: string;
-  firstName?: string;
-  middleName?: string;
-  lastName?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  email: string;
+  first_name?: string;
+  middle_name?: string;
+  last_name?: string;
 }
-
-export type SecureUser = Omit<User, 'password'>;

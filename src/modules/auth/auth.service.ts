@@ -6,10 +6,14 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '@/modules/users/users.service';
 import { PasswordService } from '@/modules/auth/password.service';
+import { AuthRepository } from '@/modules/auth/auth.repository';
 import UserRegisterDto from '@/modules/auth/dto/user-register.dto';
-import { type AuthResponse } from '@/modules/auth/types/auth';
-import { BaseUser, SecureUser } from '@/modules/users/types/users';
-import omit from 'lodash/omit';
+import {
+  JwtPayload,
+  ValidateUserInput,
+  type AuthResponse,
+} from '@/modules/auth/types/auth';
+import { User } from '@/modules/users/types/users';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +21,7 @@ export class AuthService {
     private readonly userService: UsersService,
     private readonly passwordService: PasswordService,
     private readonly jwtService: JwtService,
+    private readonly authRepository: AuthRepository,
   ) {}
 
   async register(userRegisterDto: UserRegisterDto): Promise<void> {
@@ -34,11 +39,11 @@ export class AuthService {
 
     await this.userService.create({
       email: inputEmail,
-      password: hashedPassword,
+      hashed_password: hashedPassword,
     });
   }
 
-  async validateUser(input: BaseUser): Promise<SecureUser> {
+  async validateUser(input: ValidateUserInput): Promise<User> {
     const { email: inputEmail, password: inputPassword } = input;
 
     const user = await this.userService.findByEmail(inputEmail);
@@ -49,9 +54,17 @@ export class AuthService {
       });
     }
 
+    const auth = await this.authRepository.findByUserId(user.id);
+
+    if (!auth) {
+      throw new UnauthorizedException({
+        message: 'Account not activated.',
+      });
+    }
+
     const isPasswordValid = await this.passwordService.compare(
       inputPassword,
-      user.password,
+      auth.password,
     );
 
     if (!isPasswordValid) {
@@ -60,11 +73,11 @@ export class AuthService {
       });
     }
 
-    return omit(user, 'password');
+    return user;
   }
 
-  authenticate(user: SecureUser): AuthResponse {
-    const payload = { email: user.email, sub: user.id };
+  authenticate(user: User): AuthResponse {
+    const payload: JwtPayload = { email: user.email, sub: user.id };
 
     return {
       accessToken: this.jwtService.sign(payload),

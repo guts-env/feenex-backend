@@ -6,5 +6,6 @@ export const ModuleRoutes = {
   },
   Users: {
     Main: 'users',
+    Profile: '/profile',
   },
 };
