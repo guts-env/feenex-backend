@@ -3,10 +3,12 @@ import {
   ConflictException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '@/modules/users/users.service';
 import { PasswordService } from '@/modules/auth/password.service';
 import UserRegisterDto from '@/modules/auth/dto/user-register.dto';
-import { AuthInput, AuthResponse } from '@/modules/auth/types/auth';
+import { type AuthResponse } from '@/modules/auth/types/auth';
+import { BaseUser, SecureUser } from '@/modules/users/types/users';
 import omit from 'lodash/omit';
 
 @Injectable()
@@ -14,9 +16,10 @@ export class AuthService {
   constructor(
     private readonly userService: UsersService,
     private readonly passwordService: PasswordService,
+    private readonly jwtService: JwtService,
   ) {}
 
-  async register(userRegisterDto: UserRegisterDto) {
+  async register(userRegisterDto: UserRegisterDto): Promise<void> {
     const { email: inputEmail, password: inputPassword } = userRegisterDto;
 
     const existingUser = await this.userService.findByEmail(inputEmail);
@@ -35,7 +38,7 @@ export class AuthService {
     });
   }
 
-  async validateUser(input: AuthInput) {
+  async validateUser(input: BaseUser): Promise<SecureUser> {
     const { email: inputEmail, password: inputPassword } = input;
 
     const user = await this.userService.findByEmail(inputEmail);
@@ -60,13 +63,12 @@ export class AuthService {
     return omit(user, 'password');
   }
 
-  async authenticate(input: AuthInput): Promise<AuthResponse> {
-    const user = await this.validateUser(input);
+  authenticate(user: SecureUser): AuthResponse {
+    const payload = { email: user.email, sub: user.id };
 
     return {
-      accessToken: 'todo: replace this',
-      userId: user.id,
-      email: user.email,
+      accessToken: this.jwtService.sign(payload),
+      user,
     };
   }
 }

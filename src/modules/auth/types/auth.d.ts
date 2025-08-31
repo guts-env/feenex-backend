@@ -1,10 +1,10 @@
-export type AuthInput = {
-  email: string;
-  password: string;
-};
+import { SecureUser } from '@/modules/users/types/users';
 
 export type AuthResponse = {
   accessToken: string;
-  userId: string;
-  email: string;
+  user: Partial<SecureUser>;
 };
+
+export interface AuthenticatedRequest extends Request {
+  user: SecureUser;
+}

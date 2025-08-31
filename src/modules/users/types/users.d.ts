@@ -11,3 +11,5 @@ export interface User extends BaseUser {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export type SecureUser = Omit<User, 'password'>;
