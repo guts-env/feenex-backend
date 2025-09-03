@@ -27,7 +27,10 @@ export class UploadService {
   ) {
     const awsConfig = this.configService.get<IAwsConfig>(AWS_CONFIG_KEY)!;
 
-    this.client = new S3Client();
+    this.client = new S3Client({
+      region: awsConfig.region,
+      credentials: awsConfig.credentials,
+    });
 
     this.bucket = awsConfig.s3.bucket;
     this.presignedUrlExpiry = awsConfig.s3.presignedUrlExpiresIn;
@@ -41,6 +44,7 @@ export class UploadService {
       const command = new PutObjectCommand({
         Bucket: this.bucket,
         Key: this.generateKey(orgId, dto.key, dto.filename),
+        ContentType: dto.contentType,
       });
 
       const presignedUrl = await getSignedUrl(this.client, command, {
@@ -60,7 +64,10 @@ export class UploadService {
   }
 
   private generateKey(orgId: string, key: string, filename: string) {
-    return `${orgId}/${key}/${filename}`;
+    const parts = [orgId, key, filename]
+      .map((p) => p.trim().replace(/^\/+|\/+$/g, ''))
+      .filter(Boolean);
+    return parts.join('/');
   }
 
   private logFileUploadEvent(

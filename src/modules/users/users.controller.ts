@@ -4,10 +4,10 @@ import { UsersService } from '@/modules/users/users.service';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { HasOrganizationGuard } from '@/modules/auth/guards/has-organization.guard';
 import { RolesGuard } from '@/modules/auth/guards/roles.guard';
-import { AllUsers } from '@/modules/auth/decorators/roles.decorator';
+import { AllRoles } from '@/modules/auth/decorators/roles.decorator';
 import { type IAuthenticatedRequest } from '@/modules/auth/types/auth';
 
-@AllUsers()
+@AllRoles()
 @UseGuards(JwtAuthGuard, HasOrganizationGuard, RolesGuard)
 @Controller(ModuleRoutes.Users.Main)
 export class UsersController {

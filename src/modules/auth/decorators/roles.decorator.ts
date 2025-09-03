@@ -5,7 +5,7 @@ export const ROLES_METADATA_KEY = 'roles';
 const Roles = (...roles: UserRoleEnum[]) =>
   SetMetadata(ROLES_METADATA_KEY, roles);
 
-export const AllUsers = () =>
+export const AllRoles = () =>
   Roles(
     UserRoleEnum.PERSONAL_ADMIN,
     UserRoleEnum.BUSINESS_ADMIN,

@@ -2,7 +2,7 @@ import { registerAs } from '@nestjs/config';
 import { IAwsConfig } from '@/common/types/config';
 import { AWS_CONFIG_KEY } from '@/config/keys.config';
 
-export default registerAs(AWS_CONFIG_KEY, (): IAwsConfig => {
+export default registerAs<IAwsConfig>(AWS_CONFIG_KEY, () => {
   const {
     AWS_REGION,
     AWS_S3_BUCKET,
@@ -11,6 +11,7 @@ export default registerAs(AWS_CONFIG_KEY, (): IAwsConfig => {
     AWS_SECRET_ACCESS_KEY,
   } = process.env;
 
+  /* TODO: do not require keys in deployed environments, let AWS supply */
   const missingCreds = [
     'AWS_REGION',
     'AWS_S3_BUCKET',

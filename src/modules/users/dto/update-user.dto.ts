@@ -1,17 +1,10 @@
-import { PartialType } from '@nestjs/mapped-types';
+import { PartialType, OmitType } from '@nestjs/mapped-types';
 import { CreateUserDto } from '@/modules/users/dto/create-user.dto';
-import { IsString, IsUUID } from 'class-validator';
+import { IsUUID } from 'class-validator';
 
-export class UpdateUserDto extends PartialType(CreateUserDto) {
-  @IsUUID('4')
+export class UpdateUserDto extends PartialType(
+  OmitType(CreateUserDto, ['email', 'password'] as const),
+) {
+  @IsUUID('4', { message: 'Invalid user ID format' })
   id: string;
-
-  @IsString()
-  firstName: string;
-
-  @IsString()
-  middleName?: string;
-
-  @IsString()
-  lastName: string;
 }
