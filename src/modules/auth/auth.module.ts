@@ -10,6 +10,10 @@ import { PasswordService } from '@/modules/auth/password.service';
 import { LocalStrategy } from '@/modules/auth/passport/local.strategy';
 import { JwtStrategy } from '@/modules/auth/passport/jwt.strategy';
 import { UsersModule } from '@/modules/users/users.module';
+import {
+  JWT_EXPIRATION_TIME_CONFIG_KEY,
+  JWT_SECRET_CONFIG_KEY,
+} from '@/config/keys.config';
 
 @Module({
   controllers: [AuthController],
@@ -26,9 +30,9 @@ import { UsersModule } from '@/modules/users/users.module';
     PassportModule,
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
+        secret: configService.get<string>(JWT_SECRET_CONFIG_KEY),
         signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRATION_TIME'),
+          expiresIn: configService.get<string>(JWT_EXPIRATION_TIME_CONFIG_KEY),
         },
       }),
       inject: [ConfigService],

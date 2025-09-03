@@ -8,3 +8,5 @@ export const USER_INSUFFICIENT_ROLE =
   'User has insufficient role for operation';
 export const USER_INSUFFICIENT_PERMISSIONS =
   'User has insufficient permissions for operation';
+export const GENERATE_PRESIGNED_URL_ERROR =
+  'Error occured while generating a presigned url.';

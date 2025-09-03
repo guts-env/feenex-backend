@@ -25,10 +25,12 @@ export interface IAuthUser extends IBaseInterface {
   password: string;
 }
 
+export type IUserPassportOrg = Pick<IOrganization, 'id' | 'name' | 'type'>;
+
 export interface IUserPassport {
   email: string;
   sub: string;
-  organization: Partial<IOrganization> & Pick<IOrganization, 'id'>;
+  organization: IUserPassportOrg;
   role: IRole;
 }
 

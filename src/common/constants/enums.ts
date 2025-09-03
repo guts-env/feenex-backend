@@ -27,3 +27,8 @@ export enum PermissionActionEnum {
   DELETE = 'delete',
   MANAGE = 'manage',
 }
+
+export enum FileUploadKeysEnum {
+  RECEIPTS = 'receipts',
+  IMPORTS = 'imports',
+}

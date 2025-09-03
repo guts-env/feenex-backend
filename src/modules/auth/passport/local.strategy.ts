@@ -18,7 +18,11 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     const userPassport = {
       sub: user.id,
       email: user.email,
-      organization: user.organization,
+      organization: {
+        id: user.organization.id,
+        name: user.organization.name,
+        type: user.organization.type,
+      },
       role: user.role,
     };
 
