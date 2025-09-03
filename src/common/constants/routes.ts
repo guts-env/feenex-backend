@@ -8,4 +8,7 @@ export const ModuleRoutes = {
     Main: 'users',
     Profile: '/profile',
   },
+  Organizations: {
+    Main: 'organizations',
+  },
 };

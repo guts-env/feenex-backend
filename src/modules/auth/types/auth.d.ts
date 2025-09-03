@@ -1,31 +1,53 @@
-import { BaseRepository } from '@/modules/base/base.repository';
-import { User } from '@/modules/users/types/users';
+import {
+  AccountTypeEnum,
+  PermissionActionEnum,
+  PermissionResourceEnum,
+} from '@/common/constants/enums';
+import { type IRole } from '@/common/types/common';
+import { type IOrganization } from '@/modules/organizations/types/organizations';
+import { Request } from 'express';
 
-export interface ValidateUserInput {
+export interface IRegisterUserInput {
+  email: string;
+  hashedPassword: string;
+  organizationName: string;
+  accountType: AccountTypeEnum;
+}
+
+export interface IValidateUserInput {
   email: string;
   password: string;
 }
 
-export interface AuthUser extends BaseRepository {
+export interface IAuthUser extends IBaseInterface {
   id: string;
   user_id: string;
   password: string;
 }
 
-export type AuthResponse = {
-  accessToken: string;
-  user: Partial<User>;
-};
-
-export interface AuthenticatedRequest extends Request {
-  user: User;
-}
-
-export interface JwtPayload {
+export interface IUserPassport {
   email: string;
   sub: string;
+  organization: Partial<IOrganization> & Pick<IOrganization, 'id'>;
+  role: IRole;
 }
 
-export interface ValidatedJwtPayload extends Request {
-  user: JwtPayload;
+export type IAuthResponse = {
+  accessToken: string;
+  user: IUserPassport;
+};
+
+export type IHeadersWithOrg = Headers & { 'x-organization-header': string };
+export type IRequestWithOrgHeader = Request & IHeadersWithOrg;
+export interface IAuthenticatedRequest extends IRequestWithOrgHeader {
+  user: IUserPassport;
 }
+
+export type IExtractedOrgHeader =
+  | { jwtOrg?: string; headerOrg?: string }
+  | undefined;
+
+export type IPermission = {
+  resource: PermissionResourceEnum;
+  action: PermissionActionEnum;
+};

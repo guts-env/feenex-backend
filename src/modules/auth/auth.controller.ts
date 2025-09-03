@@ -12,8 +12,8 @@ import { LocalAuthGuard } from '@/modules/auth/guards/local-auth.guard';
 import { AuthService } from '@/modules/auth/auth.service';
 import UserRegisterDto from '@/modules/auth/dto/user-register.dto';
 import {
-  type AuthResponse,
-  type AuthenticatedRequest,
+  type IAuthResponse,
+  type IAuthenticatedRequest,
 } from '@/modules/auth/types/auth';
 
 @Controller(ModuleRoutes.Auth.Main)
@@ -29,7 +29,7 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Post(ModuleRoutes.Auth.Login)
   @HttpCode(HttpStatus.OK)
-  login(@Request() req: AuthenticatedRequest): AuthResponse {
+  login(@Request() req: IAuthenticatedRequest): IAuthResponse {
     return this.authService.authenticate(req.user);
   }
 }

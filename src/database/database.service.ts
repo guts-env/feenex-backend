@@ -6,7 +6,7 @@ import { Pool, QueryResult, QueryResultRow } from 'pg';
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private pool: Pool;
 
-  constructor(private configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) {}
 
   onModuleInit() {
     this.pool = new Pool({
@@ -33,5 +33,35 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     } finally {
       client.release();
     }
+  }
+
+  private addOrganizationFilter(sql: string, orgParamIndex: number): string {
+    const orgParam = `$${orgParamIndex}`;
+
+    if (sql.toLowerCase().includes('where')) {
+      return sql.replace(/where/i, `WHERE organization_id = ${orgParam} AND`);
+    } else {
+      return sql + ` WHERE organization_id = ${orgParam}`;
+    }
+  }
+
+  async isolatedQuery<T extends QueryResultRow = any>(
+    sql: string,
+    params: any[],
+    organizationId: string,
+  ): Promise<QueryResult<T>> {
+    const orgScopedSql = this.addOrganizationFilter(sql, params.length + 1);
+
+    const queryParams: any[] = [];
+    if (Array.isArray(params)) {
+      for (const param of params) {
+        queryParams.push(param);
+      }
+    } else {
+      queryParams.push(params);
+    }
+    queryParams.push(organizationId);
+
+    return this.query(orgScopedSql, queryParams);
   }
 }
