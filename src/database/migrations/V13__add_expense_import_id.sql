@@ -1,0 +1,1 @@
+ALTER TABLE expenses ADD COLUMN import_id UUID REFERENCES imports(id) ON DELETE SET NULL;
