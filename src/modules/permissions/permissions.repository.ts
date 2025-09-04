@@ -14,18 +14,22 @@ export class PermissionsRepository extends BaseRepository {
     userId: string,
     orgId: string,
   ): Promise<IPermission[]> {
-    const result: QueryResult<IPermission> = await this.db.query(
-      `
-        SELECT DISTINCT p.resource, p.action
-        FROM user_organizations uo
-        INNER JOIN roles r ON uo.role_id = r.id
-        INNER JOIN role_permissions rp ON r.id = rp.role_id  
-        INNER JOIN permissions p ON rp.permission_id = p.id
-        WHERE uo.user_id = $1 AND uo.organization_id = $2
-      `,
-      [userId, orgId],
-    );
+    try {
+      const result: QueryResult<IPermission> = await this.db.query(
+        `
+          SELECT DISTINCT p.resource, p.action
+          FROM user_organizations uo
+          INNER JOIN roles r ON uo.role_id = r.id
+          INNER JOIN role_permissions rp ON r.id = rp.role_id  
+          INNER JOIN permissions p ON rp.permission_id = p.id
+          WHERE uo.user_id = $1 AND uo.organization_id = $2
+        `,
+        [userId, orgId],
+      );
 
-    return result.rows;
+      return result.rows;
+    } catch (error) {
+      this.handleDatabaseError(error);
+    }
   }
 }

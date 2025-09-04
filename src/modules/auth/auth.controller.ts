@@ -11,6 +11,7 @@ import { ModuleRoutes } from '@/common/constants/routes';
 import { LocalAuthGuard } from '@/modules/auth/guards/local-auth.guard';
 import { AuthService } from '@/modules/auth/auth.service';
 import UserRegisterDto from '@/modules/auth/dto/user-register.dto';
+import InviteMemberDto from '@/modules/auth/dto/register-invited-user.dto';
 import {
   type IAuthResponse,
   type IAuthenticatedRequest,
@@ -22,8 +23,14 @@ export class AuthController {
 
   @Post(ModuleRoutes.Auth.Register)
   @HttpCode(HttpStatus.CREATED)
-  async register(@Body() userRegisterDto: UserRegisterDto) {
-    await this.authService.register(userRegisterDto);
+  register(@Body() userRegisterDto: UserRegisterDto) {
+    return this.authService.register(userRegisterDto);
+  }
+
+  @Post(ModuleRoutes.Auth.RegisterInvitedUser)
+  @HttpCode(HttpStatus.CREATED)
+  registerInvitedUser(@Body() inviteMemberDto: InviteMemberDto) {
+    return this.authService.registerInvitedUser(inviteMemberDto);
   }
 
   @UseGuards(LocalAuthGuard)

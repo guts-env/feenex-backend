@@ -28,6 +28,22 @@ export enum PermissionActionEnum {
   MANAGE = 'manage',
 }
 
+/* ExpenseStatusEnum should always be aligned with expense_status db enum */
+export enum ExpenseStatusEnum {
+  DRAFT = 'draft',
+  PENDING = 'pending',
+  VERIFIED = 'verified',
+  REJECTED = 'rejected',
+}
+
+/* ExpenseSourceEnum should always be aligned with expense_source db enum */
+export enum ExpenseSourceEnum {
+  MANUAL = 'manual',
+  OCR = 'ocr',
+  IMPORT = 'import',
+  API = 'api',
+}
+
 export enum FileUploadKeysEnum {
   RECEIPTS = 'receipts',
   IMPORTS = 'imports',

@@ -10,6 +10,8 @@ import { PasswordService } from '@/modules/auth/password.service';
 import { LocalStrategy } from '@/modules/auth/passport/local.strategy';
 import { JwtStrategy } from '@/modules/auth/passport/jwt.strategy';
 import { UsersModule } from '@/modules/users/users.module';
+import { OrganizationsModule } from '@/modules/organizations/organizations.module';
+import { InvitesModule } from '@/modules/invites/invites.module';
 import {
   JWT_EXPIRATION_TIME_CONFIG_KEY,
   JWT_SECRET_CONFIG_KEY,
@@ -26,8 +28,10 @@ import {
   ],
   imports: [
     DatabaseModule,
-    UsersModule,
+    InvitesModule,
+    OrganizationsModule,
     PassportModule,
+    UsersModule,
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>(JWT_SECRET_CONFIG_KEY),

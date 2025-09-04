@@ -14,6 +14,13 @@ export interface IRegisterUserInput {
   accountType: AccountTypeEnum;
 }
 
+export interface IRegisterInvitedUserInput {
+  email: string;
+  hashedPassword: string;
+  orgId: string;
+  accountType: AccountTypeEnum;
+}
+
 export interface IValidateUserInput {
   email: string;
   password: string;

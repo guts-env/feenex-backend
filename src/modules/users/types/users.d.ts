@@ -2,7 +2,7 @@ import {
   type IBaseInterface,
   type IBaseRepositoryInterface,
 } from '@/common/modules/base/types/base';
-import { AccountTypeEnum } from '@/common/constants/enums';
+import { AccountTypeEnum, UserRoleEnum } from '@/common/constants/enums';
 import { type IRole } from '@/common/types/common';
 import { type IOrganization } from '@/modules/organizations/types/organizations';
 import { type IUserPassportOrg } from '@/modules/auth/types/auth';
@@ -16,7 +16,7 @@ export interface IRepositoryUser extends IBaseRepositoryInterface {
   org_name: string;
   org_type: AccountTypeEnum;
   role_id: string;
-  role_name: string;
+  role_name: UserRoleEnum;
 }
 
 export interface IUser extends IBaseInterface {
