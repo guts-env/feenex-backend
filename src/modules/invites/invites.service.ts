@@ -8,11 +8,14 @@ import { UsersService } from '@/modules/users/users.service';
 import CreateInviteDto from '@/modules/invites/dto/create-invite.dto';
 import { type IRepositoryInvite } from '@/modules/invites/types/invites';
 
+import { TestEmailService } from '@/modules/upload/test-email.service';
+
 @Injectable()
 export class InvitesService {
   constructor(
     private readonly invitesRepository: InvitesRepository,
     private readonly usersService: UsersService,
+    private readonly testEmailService: TestEmailService,
   ) {}
 
   async findByEmail(email: string): Promise<IRepositoryInvite | null> {
@@ -43,6 +46,7 @@ export class InvitesService {
       });
     }
 
-    return this.invitesRepository.createInvite(orgId, userId, dto);
+    await this.invitesRepository.createInvite(orgId, userId, dto);
+    await this.testEmailService.sendTestEmail(dto.email);
   }
 }

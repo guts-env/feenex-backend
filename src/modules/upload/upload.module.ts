@@ -6,5 +6,6 @@ import { TestEmailService } from '@/modules/upload/test-email.service';
 @Module({
   controllers: [UploadController],
   providers: [UploadService, TestEmailService],
+  exports: [UploadService, TestEmailService],
 })
 export class UploadModule {}

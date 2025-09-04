@@ -12,6 +12,7 @@ import { JwtStrategy } from '@/modules/auth/passport/jwt.strategy';
 import { UsersModule } from '@/modules/users/users.module';
 import { OrganizationsModule } from '@/modules/organizations/organizations.module';
 import { InvitesModule } from '@/modules/invites/invites.module';
+import { UploadModule } from '@/modules/upload/upload.module';
 import {
   JWT_EXPIRATION_TIME_CONFIG_KEY,
   JWT_SECRET_CONFIG_KEY,
@@ -31,6 +32,7 @@ import {
     InvitesModule,
     OrganizationsModule,
     PassportModule,
+    UploadModule,
     UsersModule,
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({

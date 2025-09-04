@@ -21,6 +21,8 @@ import {
 } from '@/modules/auth/types/auth';
 import { type IUser } from '@/modules/users/types/users';
 
+import { TestEmailService } from '@/modules/upload/test-email.service';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -28,6 +30,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly organizationService: OrganizationsService,
     private readonly passwordService: PasswordService,
+    private readonly testEmailService: TestEmailService,
     private readonly userService: UsersService,
     private readonly authRepository: AuthRepository,
   ) {}
@@ -65,6 +68,7 @@ export class AuthService {
     };
 
     await this.authRepository.create(registrationPayload);
+    await this.testEmailService.sendTestEmail(email);
   }
 
   async registerInvitedUser(dto: RegisterInvitedUserDto) {
@@ -102,6 +106,7 @@ export class AuthService {
     };
 
     await this.authRepository.createInvitedUser(registrationPayload, inviteId);
+    await this.testEmailService.sendTestEmail(email);
   }
 
   async validateUser(input: IValidateUserInput): Promise<IUser> {

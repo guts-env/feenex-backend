@@ -1,4 +1,11 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ModuleRoutes } from '@/common/constants/routes';
 import { CurrentOrganization } from '@/common/decorators/current-org.decorator';
