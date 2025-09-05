@@ -24,7 +24,7 @@ export class UploadController {
     private readonly testEmailService: TestEmailService,
   ) {}
 
-  @Post(ModuleRoutes.Upload.Presigned)
+  @Post(ModuleRoutes.Upload.Paths.Presigned)
   @Throttle({ default: { limit: 5, ttl: 60 } })
   @HttpCode(HttpStatus.OK)
   createPresignedUrl(

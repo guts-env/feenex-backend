@@ -8,8 +8,10 @@ import GetMembersDto, {
 import UpdateOrganizationDto from '@/modules/organizations/dto/update-organization.dto';
 import RemoveMemberDto from '@/modules/organizations/dto/remove-member.dto';
 import UpdateMemberRoleDto from '@/modules/organizations/dto/update-member-role.dto';
+import { SortOrderEnum } from '@/common/constants/enums';
 import { type IRepositoryOrganization } from '@/modules/organizations/types/organizations';
 import { type IRepositoryUser } from '@/modules/users/types/users';
+import { DEFAULT_QUERY_LIMIT } from '@/config/db.config';
 
 @Injectable()
 export class OrganizationRepository extends BaseRepository {
@@ -81,9 +83,16 @@ export class OrganizationRepository extends BaseRepository {
     organizationId: string,
     query: GetMembersDto,
   ): Promise<IRepositoryUser[]> {
-    const { roleId, search, offset, limit } = query;
+    const {
+      roleId,
+      search,
+      offset,
+      limit = DEFAULT_QUERY_LIMIT,
+      sortBy,
+      sortOrder,
+    } = query;
 
-    let conditionIndex = 2;
+    let conditionIndex = 3;
     const conditions: string[] = [];
     const params: GetMembersDtoValues = [];
 
@@ -94,36 +103,54 @@ export class OrganizationRepository extends BaseRepository {
     }
 
     if (search) {
-      conditions.push(
-        `(u.first_name ILIKE $${conditionIndex} OR u.last_name ILIKE $${conditionIndex} OR u.email ILIKE $${conditionIndex})`,
-      );
+      conditions.push(`(
+        u.first_name ILIKE $${conditionIndex} OR 
+        u.last_name ILIKE $${conditionIndex} OR 
+        u.email ILIKE $${conditionIndex}
+      )`);
       params.push(`%${search}%`);
       conditionIndex++;
     }
 
+    let queryStatement =
+      params.length > 0 ? `AND ${conditions.join(' AND ')} ` : '';
+
+    if (sortBy) {
+      /* TODO: replace with proper sorting logic */
+      queryStatement += `ORDER BY u.created_at `;
+    } else {
+      queryStatement += `ORDER BY u.created_at `;
+    }
+
+    if (sortOrder) {
+      queryStatement += `$${sortOrder} `;
+      params.push(sortOrder);
+      conditionIndex++;
+    } else {
+      queryStatement += `${SortOrderEnum.DESC} `;
+    }
+
     if (offset) {
-      conditions.push(`OFFSET $${conditionIndex}`);
+      queryStatement += `OFFSET $${conditionIndex} `;
       params.push(offset);
       conditionIndex++;
     }
 
     if (limit) {
-      conditions.push(`LIMIT $${conditionIndex}`);
+      queryStatement += `LIMIT $${conditionIndex}`;
       params.push(limit);
-      conditionIndex++;
     }
 
     try {
-      const result: QueryResult<IRepositoryUser> = await this.db.isolatedQuery(
+      const result: QueryResult<IRepositoryUser> = await this.db.query(
         `
         SELECT u.*
         FROM users u
         JOIN user_organizations uo ON u.id = uo.user_id
-        WHERE uo.user_id != $1
-        ${params.length > 0 ? `AND ${conditions.join(' AND ')}` : ''}
+        WHERE uo.user_id != $1 AND uo.organization_id = $2
+        ${queryStatement}
       `,
-        [userId, ...params],
-        organizationId,
+        [userId, organizationId, ...params],
       );
 
       return result.rows;

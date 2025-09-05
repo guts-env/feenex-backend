@@ -1,7 +1,7 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { ValidationPipe } from '@nestjs/common';
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -12,6 +12,13 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       transform: true,
+    }),
+  );
+
+  app.useGlobalInterceptors(
+    new ClassSerializerInterceptor(app.get(Reflector), {
+      excludeExtraneousValues: true,
+      strategy: 'excludeAll',
     }),
   );
 

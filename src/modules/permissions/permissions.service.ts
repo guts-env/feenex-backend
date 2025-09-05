@@ -16,8 +16,6 @@ export class PermissionsService {
       orgId,
     );
 
-    /* TODO: handle errors */
-
     return permissions;
   }
 

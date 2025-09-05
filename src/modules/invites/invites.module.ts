@@ -5,6 +5,7 @@ import { InvitesRepository } from '@/modules/invites/invites.repository';
 import { DatabaseModule } from '@/database/database.module';
 import { UploadModule } from '@/modules/upload/upload.module';
 import { UsersModule } from '@/modules/users/users.module';
+
 @Module({
   providers: [InvitesService, InvitesRepository],
   controllers: [InvitesController],

@@ -32,7 +32,7 @@ export class OrganizationsController {
   constructor(private readonly organizationsService: OrganizationsService) {}
 
   @BusinessOnly()
-  @Get(ModuleRoutes.Organizations.Members)
+  @Get(ModuleRoutes.Organizations.Paths.Members)
   getMembers(
     @Request() req: IAuthenticatedRequest,
     @Query() query: GetMembersDto,
@@ -45,7 +45,7 @@ export class OrganizationsController {
   }
 
   @BusinessOnly()
-  @Delete(':id' + ModuleRoutes.Organizations.Members)
+  @Delete(':id/' + ModuleRoutes.Organizations.Paths.Members)
   @HttpCode(HttpStatus.NO_CONTENT)
   removeMember(
     @Param('id') id: string,
@@ -70,7 +70,7 @@ export class OrganizationsController {
   }
 
   @BusinessOnly()
-  @Patch(':id' + ModuleRoutes.Organizations.MemberRole)
+  @Patch(':id/' + ModuleRoutes.Organizations.Paths.MemberRole)
   updateMemberRole(@Body() dto: UpdateMemberRoleDto) {
     return this.organizationsService.updateMemberRole(dto);
   }

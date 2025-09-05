@@ -1,31 +1,45 @@
 export const ModuleRoutes = {
   Auth: {
     Main: 'auth',
-    Register: '/register',
-    RegisterInvitedUser: '/register-invited-user',
-    Login: '/login',
+    Paths: {
+      Register: 'register',
+      RegisterInvitedUser: 'register-invited-user',
+      Login: 'login',
+    },
   },
   Categories: {
     Main: 'categories',
   },
   Expenses: {
     Main: 'expenses',
-    Verify: 'verify',
+    Paths: {
+      Auto: 'auto',
+      Verify: 'verify',
+    },
   },
   Invites: {
     Main: 'invites',
   },
   Organizations: {
     Main: 'organizations',
-    Members: '/members',
-    MemberRole: '/member-role',
+    Paths: {
+      Members: 'members',
+      MemberRole: 'member-role',
+    },
+  },
+  Reports: {
+    Main: 'reports',
   },
   Upload: {
     Main: 'upload',
-    Presigned: 'presigned',
+    Paths: {
+      Presigned: 'presigned',
+    },
   },
   Users: {
     Main: 'users',
-    Profile: '/profile',
+    Paths: {
+      Profile: 'profile',
+    },
   },
 };

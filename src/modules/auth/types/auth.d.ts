@@ -3,9 +3,10 @@ import {
   PermissionActionEnum,
   PermissionResourceEnum,
 } from '@/common/constants/enums';
+import { type Request } from 'express';
+import { type IBaseInterface } from '@/common/modules/base/types/base';
 import { type IRole } from '@/common/types/common';
 import { type IOrganization } from '@/modules/organizations/types/organizations';
-import { Request } from 'express';
 
 export interface IRegisterUserInput {
   email: string;

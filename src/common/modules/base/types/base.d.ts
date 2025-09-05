@@ -6,4 +6,10 @@ export interface IBaseRepositoryInterface {
   updated_by?: string;
 }
 
-type IBaseInterface = IBaseRepositoryInterface;
+export interface IBaseInterface {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy?: string;
+  updatedBy?: string;
+}

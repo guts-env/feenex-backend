@@ -44,7 +44,21 @@ export enum ExpenseSourceEnum {
   API = 'api',
 }
 
+/* CurrencyCodeEnum should always be aligned with currency_code db enum */
+export enum CurrencyCodeEnum {
+  PHP = 'PHP',
+  USD = 'USD',
+  HKD = 'HKD',
+  THB = 'THB',
+  VND = 'VND',
+}
+
 export enum FileUploadKeysEnum {
   RECEIPTS = 'receipts',
   IMPORTS = 'imports',
+}
+
+export enum SortOrderEnum {
+  ASC = 'ASC',
+  DESC = 'DESC',
 }

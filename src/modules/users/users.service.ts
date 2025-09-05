@@ -6,7 +6,7 @@ import { type IRepositoryUser, type IUser } from '@/modules/users/types/users';
 export class UsersService {
   constructor(private readonly userRepository: UsersRepository) {}
 
-  async findById(id: string): Promise<IUser | null> {
+  async findById(id: string): Promise<IUser> {
     const user = await this.userRepository.findById(id);
 
     if (!user) {
@@ -34,11 +34,20 @@ export class UsersService {
   }
 
   transformRepositoryUser(user: IRepositoryUser): IUser {
-    const { org_id, org_name, org_type, role_id, role_name, ...restUser } =
-      user;
+    const {
+      org_id,
+      org_name,
+      org_type,
+      role_id,
+      role_name,
+      created_at,
+      updated_at,
+    } = user;
 
     return {
-      ...restUser,
+      ...user,
+      createdAt: created_at,
+      updatedAt: updated_at,
       organization: {
         id: org_id,
         name: org_name,

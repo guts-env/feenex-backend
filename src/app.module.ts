@@ -8,9 +8,10 @@ import { UsersModule } from '@/modules/users/users.module';
 import { OrganizationsModule } from '@/modules/organizations/organizations.module';
 import { PermissionsModule } from '@/modules/permissions/permissions.module';
 import { UploadModule } from '@/modules/upload/upload.module';
-import { ExpensesModule } from './modules/expenses/expenses.module';
-import { CategoriesModule } from './modules/categories/categories.module';
-import { InvitesModule } from './modules/invites/invites.module';
+import { ExpensesModule } from '@/modules/expenses/expenses.module';
+import { CategoriesModule } from '@/modules/categories/categories.module';
+import { InvitesModule } from '@/modules/invites/invites.module';
+import { ReportsModule } from '@/modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { InvitesModule } from './modules/invites/invites.module';
     ExpensesModule,
     CategoriesModule,
     InvitesModule,
+    ReportsModule,
   ],
   controllers: [],
   providers: [

@@ -4,19 +4,27 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
   Put,
   Query,
+  Request,
 } from '@nestjs/common';
 import { AllRoles } from '@/modules/auth/decorators/roles.decorator';
 import { RoleProtected } from '@/modules/auth/decorators/auth.decorator';
+import { CurrentOrganization } from '@/common/decorators/current-org.decorator';
 import { ExpensesService } from '@/modules/expenses/expenses.service';
-import CreateExpenseDto from '@/modules/expenses/dto/create-expense.dto';
+import {
+  CreateManualExpenseDto,
+  CreateOcrExpenseDto,
+} from '@/modules/expenses/dto/create-expense.dto';
 import GetExpensesDto from '@/modules/expenses/dto/get-expenses.dto';
 import UpdateExpenseDto from '@/modules/expenses/dto/update-expense.dto';
-import VerifyExpenseDto from '@/modules/expenses/dto/verify-expense.dto';
+import GetExpenseResDto from '@/modules/expenses/dto/get-expense-res.dto';
+import { type IAuthenticatedRequest } from '@/modules/auth/types/auth';
 
 @AllRoles()
 @RoleProtected()
@@ -25,32 +33,77 @@ export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
 
   @Get()
-  getExpenses(@Query() query: GetExpensesDto) {
-    return this.expensesService.getExpenses(query);
-  }
-
-  @Get(':id')
-  getExpenseById(@Param('id') id: string) {
-    return this.expensesService.getExpenseById(id);
+  getExpenses(
+    @Request() req: IAuthenticatedRequest,
+    @Query() query: GetExpensesDto,
+  ) {
+    return this.expensesService.getExpenses(req.user.organization.id, query);
   }
 
   @Post()
-  createExpense(@Body() createExpenseDto: CreateExpenseDto) {
-    return this.expensesService.createExpense(createExpenseDto);
+  createManualExpense(
+    @Request() req: IAuthenticatedRequest,
+    @Body() createExpenseDto: CreateManualExpenseDto,
+  ) {
+    return this.expensesService.createManualExpense(
+      req.user.organization.id,
+      req.user.sub,
+      createExpenseDto,
+    );
   }
 
-  @Put()
-  updateExpense(@Body() updateExpenseDto: UpdateExpenseDto) {
-    return this.expensesService.updateExpense(updateExpenseDto);
+  @Post(ModuleRoutes.Expenses.Paths.Auto)
+  createAutoExpense(
+    @Request() req: IAuthenticatedRequest,
+    @Body() createExpenseDto: CreateOcrExpenseDto,
+  ) {
+    return this.expensesService.createAutoExpense(
+      req.user.organization.id,
+      req.user.sub,
+      createExpenseDto,
+    );
   }
 
-  @Patch(ModuleRoutes.Expenses.Verify)
-  verifyExpense(@Body() verifyExpenseDto: VerifyExpenseDto) {
-    return this.expensesService.verifyExpense(verifyExpenseDto.id);
+  @Put(':id')
+  updateExpense(
+    @Param('id') id: string,
+    @Request() req: IAuthenticatedRequest,
+    @Body() updateExpenseDto: UpdateExpenseDto,
+  ) {
+    return this.expensesService.updateExpense(
+      id,
+      req.user.sub,
+      req.user.organization.id,
+      updateExpenseDto,
+    );
+  }
+
+  @Get(':id')
+  getExpenseById(
+    @Param('id') id: string,
+    @CurrentOrganization('id') orgId: string,
+  ): Promise<GetExpenseResDto> {
+    return this.expensesService.getExpenseById(id, orgId);
+  }
+
+  @Patch(':id/' + ModuleRoutes.Expenses.Paths.Verify)
+  verifyExpense(
+    @Param('id') id: string,
+    @Request() req: IAuthenticatedRequest,
+  ) {
+    return this.expensesService.verifyExpense(
+      id,
+      req.user.sub,
+      req.user.organization.id,
+    );
   }
 
   @Delete(':id')
-  deleteExpense(@Param('id') id: string) {
-    return this.expensesService.deleteExpense(id);
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteExpense(
+    @Param('id') id: string,
+    @CurrentOrganization('id') orgId: string,
+  ) {
+    return this.expensesService.deleteExpense(id, orgId);
   }
 }

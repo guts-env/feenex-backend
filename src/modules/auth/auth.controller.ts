@@ -21,20 +21,20 @@ import {
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post(ModuleRoutes.Auth.Register)
+  @Post(ModuleRoutes.Auth.Paths.Register)
   @HttpCode(HttpStatus.CREATED)
   register(@Body() userRegisterDto: UserRegisterDto) {
     return this.authService.register(userRegisterDto);
   }
 
-  @Post(ModuleRoutes.Auth.RegisterInvitedUser)
+  @Post(ModuleRoutes.Auth.Paths.RegisterInvitedUser)
   @HttpCode(HttpStatus.CREATED)
   registerInvitedUser(@Body() inviteMemberDto: InviteMemberDto) {
     return this.authService.registerInvitedUser(inviteMemberDto);
   }
 
   @UseGuards(LocalAuthGuard)
-  @Post(ModuleRoutes.Auth.Login)
+  @Post(ModuleRoutes.Auth.Paths.Login)
   @HttpCode(HttpStatus.OK)
   login(@Request() req: IAuthenticatedRequest): IAuthResponse {
     return this.authService.authenticate(req.user);
