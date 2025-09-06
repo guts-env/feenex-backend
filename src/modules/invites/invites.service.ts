@@ -58,23 +58,18 @@ export class InvitesService {
     const token = this.generateInviteToken();
     const hashedToken = this.hashToken(token);
 
-    const invite = await this.invitesRepository.createInvite(
-      orgId,
-      userId,
-      dto,
-      hashedToken,
-    );
+    const inviteLink = `https://feenex.com/auth/register?inviteToken=${token}`;
 
-    const inviteLink = `https://feenex.com/auth/register?inviteId=${invite.id}`;
+    await this.invitesRepository.createInvite(orgId, userId, dto, hashedToken);
     await this.emailService.sendInviteEmail(dto.email, orgName, inviteLink);
+  }
+
+  hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
   }
 
   private generateInviteToken(): string {
     const token = randomBytes(32).toString('base64url');
     return token;
-  }
-
-  private hashToken(token: string): string {
-    return createHash('sha256').update(token).digest('hex');
   }
 }

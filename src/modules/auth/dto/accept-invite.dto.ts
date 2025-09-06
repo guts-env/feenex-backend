@@ -1,8 +1,8 @@
-import { IsEmail, IsNotEmpty, IsString, IsUUID } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export default class AcceptInviteDto {
-  @IsUUID('4')
-  @IsNotEmpty()
+  @IsString()
+  @MinLength(32)
   inviteToken: string;
 
   @IsEmail()
