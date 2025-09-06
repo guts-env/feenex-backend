@@ -10,7 +10,6 @@ import { UsersService } from '@/modules/users/users.service';
 import { PasswordService } from '@/modules/auth/password.service';
 import { OrganizationsService } from '@/modules/organizations/organizations.service';
 import { InvitesService } from '@/modules/invites/invites.service';
-import { EmailService } from '@/modules/email/email.service';
 import { AuthRepository } from '@/modules/auth/auth.repository';
 import UserRegisterDto from '@/modules/auth/dto/user-register.dto';
 import RegisterInvitedUserDto from '@/modules/auth/dto/register-invited-user.dto';
@@ -18,9 +17,10 @@ import { AccountTypeEnum } from '@/common/constants/enums';
 import {
   type IUserPassport,
   type IValidateUserInput,
-  type IAuthResponse,
 } from '@/modules/auth/types/auth';
 import { type IUser } from '@/modules/users/types/users';
+import { UserLoginResDto } from './dto/user-login-res.dto';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class AuthService {
@@ -29,7 +29,6 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly organizationService: OrganizationsService,
     private readonly passwordService: PasswordService,
-    private readonly emailService: EmailService,
     private readonly userService: UsersService,
     private readonly authRepository: AuthRepository,
   ) {}
@@ -67,7 +66,6 @@ export class AuthService {
     };
 
     await this.authRepository.create(registrationPayload);
-    await this.emailService.sendWelcomeEmail(email);
   }
 
   async registerInvitedUser(dto: RegisterInvitedUserDto) {
@@ -105,7 +103,6 @@ export class AuthService {
     };
 
     await this.authRepository.createInvitedUser(registrationPayload, inviteId);
-    await this.emailService.sendWelcomeEmail(email);
   }
 
   async validateUser(input: IValidateUserInput): Promise<IUser> {
@@ -147,10 +144,10 @@ export class AuthService {
     return user;
   }
 
-  authenticate(user: IUserPassport): IAuthResponse {
-    return {
+  authenticate(user: IUserPassport): UserLoginResDto {
+    return plainToInstance(UserLoginResDto, {
       accessToken: this.jwtService.sign(user),
       user,
-    };
+    });
   }
 }

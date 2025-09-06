@@ -1,12 +1,10 @@
-import { REQUEST } from '@nestjs/core';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { join } from 'path';
 import { readFile } from 'fs/promises';
 import { AWS_CONFIG_KEY } from '@/config/keys.config';
 import { type IAwsConfig } from '@/common/types/config';
-import { type IAuthenticatedRequest } from '@/modules/auth/types/auth';
 
 @Injectable()
 export class EmailService {
@@ -21,10 +19,7 @@ export class EmailService {
     'templates',
   );
 
-  constructor(
-    private readonly configService: ConfigService,
-    @Inject(REQUEST) private readonly request: IAuthenticatedRequest,
-  ) {
+  constructor(private readonly configService: ConfigService) {
     const awsConfig = this.configService.get<IAwsConfig>(AWS_CONFIG_KEY)!;
 
     this.sesClient = new SESClient({
@@ -66,19 +61,10 @@ export class EmailService {
       },
     });
 
-    try {
-      const result = await this.sesClient.send(command);
-      this.logger.log(
-        `Welcome email sent to ${toEmail}. MessageId: ${result.MessageId}`,
-      );
-    } catch (error) {
-      this.logEmailEvent('Welcome email failed', {
-        toEmail,
-        error: this.formatError(error),
-        recipientName: toEmail,
-      });
-      throw error;
-    }
+    const result = await this.sesClient.send(command);
+    this.logger.log(
+      `Welcome email sent to ${toEmail}. MessageId: ${result.MessageId}`,
+    );
   }
 
   async sendInviteEmail(toEmail: string, orgName: string, inviteLink: string) {
@@ -115,19 +101,10 @@ export class EmailService {
       },
     });
 
-    try {
-      const result = await this.sesClient.send(command);
-      this.logger.log(
-        `Invite email sent to ${toEmail}. MessageId: ${result.MessageId}`,
-      );
-    } catch (error) {
-      this.logEmailEvent('Invite email failed', {
-        toEmail,
-        error: this.formatError(error),
-        recipientName: toEmail,
-      });
-      throw error;
-    }
+    const result = await this.sesClient.send(command);
+    this.logger.log(
+      `Invite email sent to ${toEmail}. MessageId: ${result.MessageId}`,
+    );
   }
 
   async getTemplate(
@@ -149,44 +126,5 @@ export class EmailService {
     return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
       return variables[key as keyof Record<string, string>] || match;
     });
-  }
-
-  private logEmailEvent(
-    event: string,
-    additionalData?: Record<string, any>,
-  ): void {
-    const request = this.request;
-
-    this.logger.error({
-      log: event,
-      route: request.url,
-      userId: request.user?.sub || 'unknown',
-      userEmail: request.user?.email || 'unknown',
-      userRole: request.user?.role?.name || 'unknown',
-      userOrg: request.user?.organization?.id || 'unknown',
-      method: request.method,
-      ip: request.ip,
-      userAgent: request.get('user-agent'),
-      timestamp: new Date().toISOString(),
-      ...additionalData,
-    });
-  }
-
-  private formatError(error: unknown): Record<string, any> {
-    return {
-      name:
-        typeof error === 'object' && error !== null && 'name' in error
-          ? (error as { name?: unknown }).name
-          : undefined,
-      message:
-        typeof error === 'object' && error !== null && 'message' in error
-          ? (error as { message?: unknown }).message
-          : undefined,
-      status:
-        typeof error === 'object' && error !== null && '$metadata' in error
-          ? (error as { $metadata?: { httpStatusCode?: unknown } }).$metadata
-              ?.httpStatusCode
-          : undefined,
-    };
   }
 }

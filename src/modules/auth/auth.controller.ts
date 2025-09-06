@@ -10,33 +10,37 @@ import {
 import { ModuleRoutes } from '@/common/constants/routes';
 import { LocalAuthGuard } from '@/modules/auth/guards/local-auth.guard';
 import { AuthService } from '@/modules/auth/auth.service';
+import { EmailService } from '@/modules/email/email.service';
 import UserRegisterDto from '@/modules/auth/dto/user-register.dto';
 import InviteMemberDto from '@/modules/auth/dto/register-invited-user.dto';
-import {
-  type IAuthResponse,
-  type IAuthenticatedRequest,
-} from '@/modules/auth/types/auth';
+import { UserLoginResDto } from '@/modules/auth/dto/user-login-res.dto';
+import { type IAuthenticatedRequest } from '@/modules/auth/types/auth';
 
 @Controller(ModuleRoutes.Auth.Main)
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly emailService: EmailService,
+  ) {}
 
   @Post(ModuleRoutes.Auth.Paths.Register)
   @HttpCode(HttpStatus.CREATED)
-  register(@Body() userRegisterDto: UserRegisterDto) {
-    return this.authService.register(userRegisterDto);
+  async register(@Body() userRegisterDto: UserRegisterDto) {
+    await this.authService.register(userRegisterDto);
+    return this.emailService.sendWelcomeEmail(userRegisterDto.email);
   }
 
   @Post(ModuleRoutes.Auth.Paths.RegisterInvitedUser)
   @HttpCode(HttpStatus.CREATED)
-  registerInvitedUser(@Body() inviteMemberDto: InviteMemberDto) {
-    return this.authService.registerInvitedUser(inviteMemberDto);
+  async registerInvitedUser(@Body() inviteMemberDto: InviteMemberDto) {
+    await this.authService.registerInvitedUser(inviteMemberDto);
+    return this.emailService.sendWelcomeEmail(inviteMemberDto.email);
   }
 
   @UseGuards(LocalAuthGuard)
   @Post(ModuleRoutes.Auth.Paths.Login)
   @HttpCode(HttpStatus.OK)
-  login(@Request() req: IAuthenticatedRequest): IAuthResponse {
+  login(@Request() req: IAuthenticatedRequest): UserLoginResDto {
     return this.authService.authenticate(req.user);
   }
 }
