@@ -3,12 +3,16 @@ import { ConfigService } from '@nestjs/config';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { join } from 'path';
 import { readFile } from 'fs/promises';
-import { AWS_CONFIG_KEY } from '@/config/keys.config';
+import {
+  AWS_CONFIG_KEY,
+  ENABLE_EMAIL_SERVICE_CONFIG_KEY,
+} from '@/config/keys.config';
 import { type IAwsConfig } from '@/common/types/config';
 
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
+  private readonly enableEmailService: boolean;
   private readonly sesClient: SESClient;
   private readonly sourceEmail: string;
   private readonly templatesPath = join(
@@ -28,9 +32,17 @@ export class EmailService {
     });
 
     this.sourceEmail = awsConfig.ses.sourceEmail;
+
+    this.enableEmailService = Boolean(
+      Number(this.configService.get<string>(ENABLE_EMAIL_SERVICE_CONFIG_KEY)),
+    );
   }
 
   async sendWelcomeEmail(toEmail: string) {
+    if (!this.enableEmailService) {
+      return;
+    }
+
     const htmlTemplate = await this.getTemplate('welcome', 'html');
     const txtTemplate = await this.getTemplate('welcome', 'txt');
 
@@ -68,6 +80,10 @@ export class EmailService {
   }
 
   async sendInviteEmail(toEmail: string, orgName: string, inviteLink: string) {
+    if (!this.enableEmailService) {
+      return;
+    }
+
     const htmlTemplate = await this.getTemplate('invite', 'html');
     const txtTemplate = await this.getTemplate('invite', 'txt');
 
