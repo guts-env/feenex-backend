@@ -22,6 +22,10 @@ export class InvitesService {
     return this.invitesRepository.findByEmail(email);
   }
 
+  async findByToken(token: string): Promise<IRepositoryInvite | null> {
+    return this.invitesRepository.findByToken(token);
+  }
+
   async createInvite(
     orgId: string,
     orgName: string,
@@ -62,11 +66,6 @@ export class InvitesService {
 
     const inviteLink = `https://feenex.com/auth/register?inviteId=${invite.id}`;
     await this.emailService.sendInviteEmail(dto.email, orgName, inviteLink);
-  }
-
-  verifyToken(token: string, hash: string): boolean {
-    const tokenHash = this.hashToken(token);
-    return tokenHash === hash;
   }
 
   private generateInviteToken(): string {

@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { plainToInstance } from 'class-transformer';
 import { UsersService } from '@/modules/users/users.service';
 import { PasswordService } from '@/modules/auth/password.service';
 import { OrganizationsService } from '@/modules/organizations/organizations.service';
@@ -13,14 +14,13 @@ import { InvitesService } from '@/modules/invites/invites.service';
 import { AuthRepository } from '@/modules/auth/auth.repository';
 import UserRegisterDto from '@/modules/auth/dto/user-register.dto';
 import RegisterInvitedUserDto from '@/modules/auth/dto/accept-invite.dto';
+import { UserLoginResDto } from '@/modules/auth/dto/user-login-res.dto';
 import { AccountTypeEnum } from '@/common/constants/enums';
 import {
   type IUserPassport,
   type IValidateUserInput,
 } from '@/modules/auth/types/auth';
 import { type IUser } from '@/modules/users/types/users';
-import { UserLoginResDto } from './dto/user-login-res.dto';
-import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class AuthService {
@@ -71,20 +71,30 @@ export class AuthService {
   async registerInvitedUser(dto: RegisterInvitedUserDto) {
     const { email, password, inviteToken } = dto;
 
-    const invite = await this.inviteService.findByEmail(email);
+    const invite = await this.inviteService.findByToken(inviteToken);
     if (!invite) {
       throw new NotFoundException({
         message: 'No valid invite found.',
       });
     }
 
-    const isTokenValid = this.inviteService.verifyToken(
-      inviteToken,
-      invite.token,
-    );
-    if (!isTokenValid) {
-      throw new UnauthorizedException({
-        message: 'Invalid invite token.',
+    if (invite.email !== email) {
+      throw new BadRequestException({
+        message: 'Email does not match invite.',
+      });
+    }
+
+    const expiresAt = new Date(invite.expires_at);
+    const now = new Date();
+    if (expiresAt < now) {
+      throw new BadRequestException({
+        message: 'Invite has expired.',
+      });
+    }
+
+    if (invite.used) {
+      throw new BadRequestException({
+        message: 'Invite has already been used.',
       });
     }
 
@@ -112,10 +122,7 @@ export class AuthService {
       accountType: AccountTypeEnum.BUSINESS,
     };
 
-    await this.authRepository.createInvitedUser(
-      registrationPayload,
-      inviteToken,
-    );
+    await this.authRepository.createInvitedUser(registrationPayload, invite.id);
   }
 
   async validateUser(input: IValidateUserInput): Promise<IUser> {

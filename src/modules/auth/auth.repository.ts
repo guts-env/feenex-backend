@@ -77,7 +77,7 @@ export class AuthRepository extends BaseRepository {
 
   async createInvitedUser(
     user: IRegisterInvitedUserInput,
-    inviteToken: string,
+    inviteId: string,
   ): Promise<void> {
     const dbClient = await this.db.getClient();
 
@@ -117,9 +117,9 @@ export class AuthRepository extends BaseRepository {
 
       await dbClient.query(
         `
-          UPDATE invites SET used = TRUE, used_at = NOW() WHERE token = $1
+          UPDATE invites SET used = TRUE, used_at = NOW() WHERE id = $1
         `,
-        [inviteToken],
+        [inviteId],
       );
 
       await dbClient.query('COMMIT');

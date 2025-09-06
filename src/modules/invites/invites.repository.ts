@@ -20,6 +20,15 @@ export class InvitesRepository extends BaseRepository {
     return result.rows[0] || null;
   }
 
+  async findByToken(token: string): Promise<IRepositoryInvite | null> {
+    const result: QueryResult<IRepositoryInvite> = await this.db.query(
+      `SELECT * FROM invites WHERE token = $1`,
+      [token],
+    );
+
+    return result.rows[0] || null;
+  }
+
   async createInvite(
     orgId: string,
     userId: string,
