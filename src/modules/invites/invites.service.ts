@@ -5,24 +5,28 @@ import {
 } from '@nestjs/common';
 import { InvitesRepository } from '@/modules/invites/invites.repository';
 import { UsersService } from '@/modules/users/users.service';
+import { EmailService } from '@/modules/email/email.service';
 import CreateInviteDto from '@/modules/invites/dto/create-invite.dto';
 import { type IRepositoryInvite } from '@/modules/invites/types/invites';
-
-import { TestEmailService } from '@/modules/upload/test-email.service';
 
 @Injectable()
 export class InvitesService {
   constructor(
     private readonly invitesRepository: InvitesRepository,
     private readonly usersService: UsersService,
-    private readonly testEmailService: TestEmailService,
+    private readonly emailService: EmailService,
   ) {}
 
   async findByEmail(email: string): Promise<IRepositoryInvite | null> {
     return this.invitesRepository.findByEmail(email);
   }
 
-  async createInvite(orgId: string, userId: string, dto: CreateInviteDto) {
+  async createInvite(
+    orgId: string,
+    orgName: string,
+    userId: string,
+    dto: CreateInviteDto,
+  ) {
     const userExists = await this.usersService.findByEmail(dto.email, true);
     if (userExists) {
       const user = await this.usersService.findByEmail(dto.email);
@@ -46,7 +50,13 @@ export class InvitesService {
       });
     }
 
-    await this.invitesRepository.createInvite(orgId, userId, dto);
-    await this.testEmailService.sendTestEmail(dto.email);
+    const invite = await this.invitesRepository.createInvite(
+      orgId,
+      userId,
+      dto,
+    );
+
+    const inviteLink = `https://feenex.com/auth/register?inviteId=${invite.id}`;
+    await this.emailService.sendInviteEmail(dto.email, orgName, inviteLink);
   }
 }

@@ -27,6 +27,7 @@ export class InvitesController {
   ) {
     return this.invitesService.createInvite(
       req.user.organization.id,
+      req.user.organization.name,
       req.user.sub,
       dto,
     );

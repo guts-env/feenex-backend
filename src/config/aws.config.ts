@@ -9,6 +9,7 @@ export default registerAs<IAwsConfig>(AWS_CONFIG_KEY, () => {
     AWS_S3_PRESIGNED_EXPIRY,
     AWS_ACCESS_KEY_ID,
     AWS_SECRET_ACCESS_KEY,
+    AWS_SES_SOURCE_EMAIL,
   } = process.env;
 
   /* TODO: do not require keys in deployed environments, let AWS supply */
@@ -18,6 +19,7 @@ export default registerAs<IAwsConfig>(AWS_CONFIG_KEY, () => {
     'AWS_S3_PRESIGNED_EXPIRY',
     'AWS_ACCESS_KEY_ID',
     'AWS_SECRET_ACCESS_KEY',
+    'AWS_SES_SOURCE_EMAIL',
   ].filter((varName) => !process.env[varName]);
 
   if (missingCreds.length > 0) {
@@ -36,9 +38,16 @@ export default registerAs<IAwsConfig>(AWS_CONFIG_KEY, () => {
       bucket: AWS_S3_BUCKET!,
       presignedUrlExpiresIn: +AWS_S3_PRESIGNED_EXPIRY!,
     },
+    ses: {
+      sourceEmail: AWS_SES_SOURCE_EMAIL!,
+    },
     credentials: {
       accessKeyId: AWS_ACCESS_KEY_ID!,
       secretAccessKey: AWS_SECRET_ACCESS_KEY!,
+    },
+    textract: {
+      maxRetries: 3,
+      timeout: 30000, // 30 seconds
     },
   };
 });

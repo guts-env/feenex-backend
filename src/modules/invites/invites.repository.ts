@@ -20,11 +20,15 @@ export class InvitesRepository extends BaseRepository {
     return result.rows[0] || null;
   }
 
-  async createInvite(orgId: string, userId: string, dto: CreateInviteDto) {
+  async createInvite(
+    orgId: string,
+    userId: string,
+    dto: CreateInviteDto,
+  ): Promise<IRepositoryInvite> {
     const { email } = dto;
 
     try {
-      await this.db.query(
+      const result: QueryResult<IRepositoryInvite> = await this.db.query(
         `
           INSERT INTO invites (organization_id, email, created_by, updated_by) 
           VALUES ($1, $2, $3, $3)
@@ -32,6 +36,8 @@ export class InvitesRepository extends BaseRepository {
         `,
         [orgId, email, userId],
       );
+
+      return result.rows[0];
     } catch (error: any) {
       this.handleDatabaseError(error);
     }

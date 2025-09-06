@@ -4,8 +4,15 @@ export interface IAwsConfig {
     bucket: string;
     presignedUrlExpiresIn: number;
   };
+  ses: {
+    sourceEmail: string;
+  };
   credentials: {
     accessKeyId: string;
     secretAccessKey: string;
+  };
+  textract?: {
+    maxRetries: number;
+    timeout: number;
   };
 }
