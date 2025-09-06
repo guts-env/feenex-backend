@@ -56,12 +56,13 @@ export class InvitesService {
     }
 
     const token = this.generateInviteToken();
+    const hashedToken = this.hashToken(token);
 
     const invite = await this.invitesRepository.createInvite(
       orgId,
       userId,
       dto,
-      token,
+      hashedToken,
     );
 
     const inviteLink = `https://feenex.com/auth/register?inviteId=${invite.id}`;
