@@ -21,7 +21,7 @@ CREATE TABLE ocr_results (
     processing_time_ms INTEGER,
     
     -- Image reference
-    image_path TEXT,
+    image_path TEXT NOT NULL,
     
     -- Audit
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

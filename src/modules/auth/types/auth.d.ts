@@ -8,6 +8,11 @@ import { type IBaseInterface } from '@/common/modules/base/types/base';
 import { type IRole } from '@/common/types/common';
 import { type IOrganization } from '@/modules/organizations/types/organizations';
 
+export interface IRepositoryAuth extends IBaseRepositoryInterface {
+  user_id: string;
+  password: string;
+}
+
 export interface IRegisterUserInput {
   email: string;
   hashedPassword: string;

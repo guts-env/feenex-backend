@@ -28,6 +28,7 @@ CREATE TABLE expenses (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     category_id UUID REFERENCES categories(id) NOT NULL,
     merchant_name VARCHAR(200) NOT NULL,
+    photos TEXT[],
     
     -- Core expense data
     amount DECIMAL(12,2) NOT NULL,
@@ -42,9 +43,11 @@ CREATE TABLE expenses (
     -- Processing pipeline
     ocr_result_id UUID REFERENCES ocr_results(id),
     llm_result_id UUID REFERENCES llm_results(id),
+    
     source expense_source NOT NULL,
     status expense_status DEFAULT 'pending',
     verified_by UUID REFERENCES users(id),
+    import_id UUID REFERENCES imports(id),
     
     -- Audit
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

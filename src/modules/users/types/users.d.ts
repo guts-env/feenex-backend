@@ -12,6 +12,8 @@ export interface IRepositoryUser extends IBaseRepositoryInterface {
   first_name?: string;
   middle_name?: string;
   last_name?: string;
+}
+export interface IUserWithOrganizationAndRole extends IRepositoryUser {
   org_id: string;
   org_name: string;
   org_type: AccountTypeEnum;

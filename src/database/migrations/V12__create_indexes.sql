@@ -41,6 +41,13 @@ CREATE INDEX idx_expenses_status ON expenses(status);
 CREATE INDEX idx_expenses_date ON expenses(date);
 CREATE INDEX idx_expenses_merchant_name ON expenses(merchant_name);
 
+-- Invites indexes
+CREATE INDEX idx_invites_expires_at ON invites(expires_at);
+CREATE INDEX idx_invites_used ON invites(used);
+CREATE INDEX idx_invites_organization_id ON invites(organization_id);
+CREATE INDEX idx_invites_created_by ON invites(created_by);
+CREATE INDEX idx_invites_token ON invites(token);
+
 -- Composite indexes for common query patterns
 CREATE INDEX idx_expenses_org_user_date ON expenses(organization_id, user_id, date DESC);
 CREATE INDEX idx_expenses_org_status_date ON expenses(organization_id, status, date DESC);

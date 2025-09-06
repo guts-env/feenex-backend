@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { QueryResult } from 'pg';
 import { DatabaseService } from '@/database/database.service';
 import { BaseRepository } from '@/common/modules/base/base.repository';
-import { type IRepositoryUser } from '@/modules/users/types/users';
+import { type IUserWithOrganizationAndRole } from '@/modules/users/types/users';
 
 @Injectable()
 export class UsersRepository extends BaseRepository {
@@ -10,10 +10,11 @@ export class UsersRepository extends BaseRepository {
     super();
   }
 
-  async findById(id: string): Promise<IRepositoryUser | null> {
+  async findById(id: string): Promise<IUserWithOrganizationAndRole | null> {
     try {
-      const result: QueryResult<IRepositoryUser> = await this.db.query(
-        `
+      const result: QueryResult<IUserWithOrganizationAndRole> =
+        await this.db.query(
+          `
           SELECT 
             u.*,
             o.id as org_id,
@@ -27,8 +28,8 @@ export class UsersRepository extends BaseRepository {
             JOIN roles r ON uo.role_id = r.id
           WHERE u.id = $1
         `,
-        [id],
-      );
+          [id],
+        );
 
       return result.rows[0] || null;
     } catch (error: any) {
@@ -39,7 +40,7 @@ export class UsersRepository extends BaseRepository {
   async findByEmail(
     email: string,
     isRegistration?: boolean,
-  ): Promise<IRepositoryUser | null> {
+  ): Promise<IUserWithOrganizationAndRole | null> {
     try {
       let queryStatement = `
         SELECT u.*,
@@ -59,10 +60,8 @@ export class UsersRepository extends BaseRepository {
         queryStatement = `SELECT * FROM users WHERE email = $1`;
       }
 
-      const result: QueryResult<IRepositoryUser> = await this.db.query(
-        queryStatement,
-        [email],
-      );
+      const result: QueryResult<IUserWithOrganizationAndRole> =
+        await this.db.query(queryStatement, [email]);
 
       return result.rows[0] || null;
     } catch (error: any) {

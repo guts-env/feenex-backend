@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UsersRepository } from '@/modules/users/users.repository';
-import { type IRepositoryUser, type IUser } from '@/modules/users/types/users';
+import {
+  type IUserWithOrganizationAndRole,
+  type IUser,
+} from '@/modules/users/types/users';
 
 @Injectable()
 export class UsersService {
@@ -33,7 +36,7 @@ export class UsersService {
     return this.transformRepositoryUser(user);
   }
 
-  transformRepositoryUser(user: IRepositoryUser): IUser {
+  transformRepositoryUser(user: IUserWithOrganizationAndRole): IUser {
     const {
       org_id,
       org_name,

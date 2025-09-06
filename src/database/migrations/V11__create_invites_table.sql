@@ -13,9 +13,3 @@ CREATE TABLE invites (
     updated_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE (email, organization_id)
 );
-
-CREATE INDEX idx_invites_expires_at ON invites(expires_at);
-CREATE INDEX idx_invites_used ON invites(used);
-CREATE INDEX idx_invites_organization_id ON invites(organization_id);
-CREATE INDEX idx_invites_created_by ON invites(created_by);
-CREATE INDEX idx_invites_token ON invites(token);

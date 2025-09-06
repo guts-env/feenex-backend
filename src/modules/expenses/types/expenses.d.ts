@@ -17,18 +17,21 @@ export interface IExpenseOtherDetails {
 }
 
 export interface IRepositoryExpense extends IBaseRepositoryInterface {
-  user_id: string;
   organization_id: string;
+  user_id: string;
   category_id: string;
-  verified_by?: string;
-  amount: number;
   merchant_name: string;
-  source: ExpenseSourceEnum;
-  status: ExpenseStatusEnum;
-  currency: CurrencyCodeEnum;
-  date: string;
   photos?: string[];
+  amount: number;
+  currency: CurrencyCodeEnum;
+  date: Date;
   description?: string;
   items?: IExpenseItem[];
   other_details?: IExpenseOtherDetails[];
+  ocr_result_id?: string;
+  llm_result_id?: string;
+  source: ExpenseSourceEnum;
+  status: ExpenseStatusEnum;
+  verified_by?: string;
+  import_id?: string;
 }
