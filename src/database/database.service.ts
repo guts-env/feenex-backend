@@ -2,10 +2,13 @@ import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Pool, QueryResult, QueryResultRow } from 'pg';
 import { DATABASE_URL_CONFIG_KEY } from '@/config/keys.config';
+import { Kysely, PostgresDialect } from 'kysely';
+import { DB } from '@/database/types/db';
 
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private pool!: Pool;
+  private db!: Kysely<DB>;
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -13,10 +16,21 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.pool = new Pool({
       connectionString: this.configService.get<string>(DATABASE_URL_CONFIG_KEY),
     });
+
+    this.db = new Kysely<DB>({
+      dialect: new PostgresDialect({
+        pool: this.pool,
+      }),
+    });
   }
 
-  onModuleDestroy() {
-    return this.pool.end();
+  async onModuleDestroy() {
+    await this.db.destroy();
+    await this.pool.end();
+  }
+
+  getDb(): Kysely<DB> {
+    return this.db;
   }
 
   getClient() {

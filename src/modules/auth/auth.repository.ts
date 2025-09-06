@@ -4,8 +4,8 @@ import { DatabaseService } from '@/database/database.service';
 import { BaseRepository } from '@/common/modules/base/base.repository';
 import {
   type IRegisterUserInput,
-  type IAuthUser,
   type IRegisterInvitedUserInput,
+  type IRepositoryAuth,
 } from '@/modules/auth/types/auth';
 import { AccountTypeEnum, UserRoleEnum } from '@/common/constants/enums';
 
@@ -117,7 +117,7 @@ export class AuthRepository extends BaseRepository {
 
       await dbClient.query(
         `
-          UPDATE invites SET used = TRUE, used_at = NOW() WHERE id = $1
+          UPDATE invites SET used = TRUE, used_at = NOW() WHERE token = $1
         `,
         [inviteId],
       );
@@ -131,15 +131,14 @@ export class AuthRepository extends BaseRepository {
     }
   }
 
-  async findByUserId(id: string): Promise<IAuthUser | null> {
-    const result: QueryResult<IAuthUser> = await this.db.query(
-      `
-        SELECT * FROM auth
-        WHERE user_id = $1
-      `,
-      [id],
-    );
+  async findByUserId(id: string): Promise<IRepositoryAuth> {
+    const result = await this.db
+      .getDb()
+      .selectFrom('auth')
+      .selectAll()
+      .where('user_id', '=', id)
+      .executeTakeFirstOrThrow();
 
-    return result.rows[0] || null;
+    return result;
   }
 }
