@@ -23,7 +23,8 @@ export class InvitesService {
   }
 
   async findByToken(token: string): Promise<IRepositoryInvite | null> {
-    return this.invitesRepository.findByToken(token);
+    const hashedToken = this.hashToken(token);
+    return this.invitesRepository.findByToken(hashedToken);
   }
 
   async createInvite(
@@ -64,12 +65,12 @@ export class InvitesService {
     await this.emailService.sendInviteEmail(dto.email, orgName, inviteLink);
   }
 
-  hashToken(token: string): string {
-    return createHash('sha256').update(token).digest('hex');
-  }
-
   private generateInviteToken(): string {
     const token = randomBytes(32).toString('base64url');
     return token;
+  }
+
+  private hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
   }
 }

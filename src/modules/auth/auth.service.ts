@@ -71,9 +71,7 @@ export class AuthService {
   async registerInvitedUser(dto: RegisterInvitedUserDto) {
     const { email, password, inviteToken } = dto;
 
-    const hashedToken = this.inviteService.hashToken(inviteToken);
-
-    const invite = await this.inviteService.findByToken(hashedToken);
+    const invite = await this.inviteService.findByToken(inviteToken);
     if (!invite) {
       throw new NotFoundException({
         message: 'No valid invite found.',
