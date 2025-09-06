@@ -24,17 +24,18 @@ export class InvitesRepository extends BaseRepository {
     orgId: string,
     userId: string,
     dto: CreateInviteDto,
+    token: string,
   ): Promise<IRepositoryInvite> {
     const { email } = dto;
 
     try {
       const result: QueryResult<IRepositoryInvite> = await this.db.query(
         `
-          INSERT INTO invites (organization_id, email, created_by, updated_by) 
-          VALUES ($1, $2, $3, $3)
+          INSERT INTO invites (organization_id, email, created_by, updated_by, token) 
+          VALUES ($1, $2, $3, $3, $4)
           RETURNING *
         `,
-        [orgId, email, userId],
+        [orgId, email, userId, token],
       );
 
       return result.rows[0];

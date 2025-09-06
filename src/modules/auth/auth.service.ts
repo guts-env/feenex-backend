@@ -12,7 +12,7 @@ import { OrganizationsService } from '@/modules/organizations/organizations.serv
 import { InvitesService } from '@/modules/invites/invites.service';
 import { AuthRepository } from '@/modules/auth/auth.repository';
 import UserRegisterDto from '@/modules/auth/dto/user-register.dto';
-import RegisterInvitedUserDto from '@/modules/auth/dto/register-invited-user.dto';
+import RegisterInvitedUserDto from '@/modules/auth/dto/accept-invite.dto';
 import { AccountTypeEnum } from '@/common/constants/enums';
 import {
   type IUserPassport,
@@ -69,12 +69,22 @@ export class AuthService {
   }
 
   async registerInvitedUser(dto: RegisterInvitedUserDto) {
-    const { email, password, inviteId } = dto;
+    const { email, password, inviteToken } = dto;
 
     const invite = await this.inviteService.findByEmail(email);
-    if (!invite || invite.id !== inviteId) {
+    if (!invite) {
       throw new NotFoundException({
         message: 'No valid invite found.',
+      });
+    }
+
+    const isTokenValid = this.inviteService.verifyToken(
+      inviteToken,
+      invite.token,
+    );
+    if (!isTokenValid) {
+      throw new UnauthorizedException({
+        message: 'Invalid invite token.',
       });
     }
 
@@ -102,7 +112,10 @@ export class AuthService {
       accountType: AccountTypeEnum.BUSINESS,
     };
 
-    await this.authRepository.createInvitedUser(registrationPayload, inviteId);
+    await this.authRepository.createInvitedUser(
+      registrationPayload,
+      inviteToken,
+    );
   }
 
   async validateUser(input: IValidateUserInput): Promise<IUser> {

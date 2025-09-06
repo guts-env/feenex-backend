@@ -12,7 +12,7 @@ import { LocalAuthGuard } from '@/modules/auth/guards/local-auth.guard';
 import { AuthService } from '@/modules/auth/auth.service';
 import { EmailService } from '@/modules/email/email.service';
 import UserRegisterDto from '@/modules/auth/dto/user-register.dto';
-import InviteMemberDto from '@/modules/auth/dto/register-invited-user.dto';
+import AcceptInviteDto from '@/modules/auth/dto/accept-invite.dto';
 import { UserLoginResDto } from '@/modules/auth/dto/user-login-res.dto';
 import { type IAuthenticatedRequest } from '@/modules/auth/types/auth';
 
@@ -30,9 +30,9 @@ export class AuthController {
     return this.emailService.sendWelcomeEmail(userRegisterDto.email);
   }
 
-  @Post(ModuleRoutes.Auth.Paths.RegisterInvitedUser)
+  @Post(ModuleRoutes.Auth.Paths.AcceptInvite)
   @HttpCode(HttpStatus.CREATED)
-  async registerInvitedUser(@Body() inviteMemberDto: InviteMemberDto) {
+  async registerInvitedUser(@Body() inviteMemberDto: AcceptInviteDto) {
     await this.authService.registerInvitedUser(inviteMemberDto);
     return this.emailService.sendWelcomeEmail(inviteMemberDto.email);
   }

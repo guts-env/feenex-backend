@@ -1,9 +1,9 @@
 import { IsEmail, IsNotEmpty, IsString, IsUUID } from 'class-validator';
 
-export default class RegisterInvitedUserDto {
+export default class AcceptInviteDto {
   @IsUUID('4')
   @IsNotEmpty()
-  inviteId: string;
+  inviteToken: string;
 
   @IsEmail()
   @IsNotEmpty()

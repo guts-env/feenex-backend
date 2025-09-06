@@ -3,7 +3,7 @@ export const ModuleRoutes = {
     Main: 'auth',
     Paths: {
       Register: 'register',
-      RegisterInvitedUser: 'register-invited-user',
+      AcceptInvite: 'accept-invite',
       Login: 'login',
     },
   },

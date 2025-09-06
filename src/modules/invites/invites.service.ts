@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
 } from '@nestjs/common';
+import { createHash, randomBytes } from 'crypto';
 import { InvitesRepository } from '@/modules/invites/invites.repository';
 import { UsersService } from '@/modules/users/users.service';
 import { EmailService } from '@/modules/email/email.service';
@@ -50,13 +51,30 @@ export class InvitesService {
       });
     }
 
+    const token = this.generateInviteToken();
+
     const invite = await this.invitesRepository.createInvite(
       orgId,
       userId,
       dto,
+      token,
     );
 
     const inviteLink = `https://feenex.com/auth/register?inviteId=${invite.id}`;
     await this.emailService.sendInviteEmail(dto.email, orgName, inviteLink);
+  }
+
+  verifyToken(token: string, hash: string): boolean {
+    const tokenHash = this.hashToken(token);
+    return tokenHash === hash;
+  }
+
+  private generateInviteToken(): string {
+    const token = randomBytes(32).toString('base64url');
+    return token;
+  }
+
+  private hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
   }
 }
