@@ -7,29 +7,29 @@ import { IsNotEmpty } from 'class-validator';
 export default class GetUserDto {
   @IsUUID('4')
   @IsNotEmpty()
-  id: string;
+  id!: string;
 
   @IsUUID('4')
   @IsNotEmpty()
-  organization: Partial<IOrganization>;
+  organization!: Partial<IOrganization>;
 
   @IsUUID('4')
   @IsNotEmpty()
-  role: Partial<IRole>;
+  role!: Partial<IRole>;
 
   @IsString()
   @IsNotEmpty()
-  email: string;
+  email!: string;
 
   @IsString()
   @Optional()
-  firstName: string;
+  firstName!: string;
 
   @IsString()
   @Optional()
-  middleName: string;
+  middleName!: string;
 
   @IsString()
   @Optional()
-  lastName: string;
+  lastName!: string;
 }

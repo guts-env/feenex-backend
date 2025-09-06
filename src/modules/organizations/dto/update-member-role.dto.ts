@@ -4,9 +4,9 @@ import { UserRoleEnum } from '@/common/constants/enums';
 export default class UpdateMemberRoleDto {
   @IsUUID('4')
   @IsNotEmpty()
-  userId: string;
+  userId!: string;
 
   @IsEnum(UserRoleEnum)
   @IsNotEmpty()
-  role: UserRoleEnum;
+  role!: UserRoleEnum;
 }

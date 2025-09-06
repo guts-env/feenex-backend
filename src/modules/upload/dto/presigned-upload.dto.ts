@@ -112,23 +112,23 @@ export default class PresignedUploadDto {
   @IsString()
   @MaxLength(255, { message: 'Filename must be less than 255 characters' })
   @IsNotEmpty({ message: 'Filename is required' })
-  filename: string;
+  filename!: string;
 
   @IsEnum(FileUploadKeysEnum, {
     message: 'Invalid upload key',
   })
   @IsNotEmpty({ message: 'Upload key is required' })
-  key: FileUploadKeysEnum;
+  key!: FileUploadKeysEnum;
 
   @ValidateIf((o: PresignedUploadDto) =>
     Object.values(FileUploadKeysEnum).includes(o.key),
   )
   @IsContentTypeValid()
   @IsNotEmpty({ message: 'Content type is required' })
-  contentType: IAllowedContentTypes;
+  contentType!: IAllowedContentTypes;
 
   @IsNumber({}, { message: 'File size must be a number' })
   @IsPositive({ message: 'Invalid file size' })
   @IsFileSizeValid()
-  fileSize: number;
+  fileSize!: number;
 }

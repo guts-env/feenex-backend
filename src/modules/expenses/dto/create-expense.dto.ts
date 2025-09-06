@@ -15,25 +15,25 @@ import { CurrencyCodeEnum, ExpenseSourceEnum } from '@/common/constants/enums';
 export class ExpenseItemDto {
   @IsNotEmpty()
   @IsString()
-  name: string;
+  name!: string;
 
   @IsNotEmpty()
   @IsNumber()
-  quantity: number;
+  quantity!: number;
 
   @IsNotEmpty()
   @IsNumber({ maxDecimalPlaces: 2 })
-  price: number;
+  price!: number;
 }
 
 export class ExpenseOtherDetailDto {
   @IsNotEmpty()
   @IsString()
-  key: string;
+  key!: string;
 
   @IsNotEmpty()
   @IsString()
-  value: string;
+  value!: string;
 }
 
 class BaseExpenseDto {
@@ -60,23 +60,23 @@ export type IExpenseValues = IExpenseValue[];
 export class CreateExpenseDto extends BaseExpenseDto {
   @IsNotEmpty()
   @IsEnum(ExpenseSourceEnum)
-  source: ExpenseSourceEnum;
+  source!: ExpenseSourceEnum;
 
   @IsNotEmpty()
   @IsUUID('4')
-  categoryId: string;
+  categoryId!: string;
 
   @IsNotEmpty()
   @IsString()
-  merchantName: string;
+  merchantName!: string;
 
   @IsNotEmpty()
   @IsNumber({ maxDecimalPlaces: 2 })
-  amount: string;
+  amount!: string;
 
   @IsNotEmpty()
   @IsDateString()
-  date: string;
+  date!: string;
 
   @IsOptional()
   @ArrayNotEmpty()
@@ -99,19 +99,19 @@ export class CreateExpenseDto extends BaseExpenseDto {
 export class CreateManualExpenseDto extends BaseExpenseDto {
   @IsNotEmpty()
   @IsUUID('4')
-  categoryId: string;
+  categoryId!: string;
 
   @IsNotEmpty()
   @IsString()
-  merchantName: string;
+  merchantName!: string;
 
   @IsNotEmpty()
   @IsNumber({ maxDecimalPlaces: 2 })
-  amount: string;
+  amount!: string;
 
   @IsNotEmpty()
   @IsDateString()
-  date: string;
+  date!: string;
 
   @IsOptional()
   @ArrayNotEmpty()
@@ -123,5 +123,5 @@ export class CreateOcrExpenseDto extends BaseExpenseDto {
   @IsNotEmpty()
   @ArrayNotEmpty()
   @IsString({ each: true })
-  photos: string[];
+  photos!: string[];
 }

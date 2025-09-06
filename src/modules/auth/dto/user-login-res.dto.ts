@@ -3,44 +3,44 @@ import { Expose, Type } from 'class-transformer';
 
 class UserRoleDto {
   @Expose()
-  id: string;
+  id!: string;
 
   @Expose()
-  name: string;
+  name!: string;
 }
 
 class UserOrganizationDto {
   @Expose()
-  id: string;
+  id!: string;
 
   @Expose()
-  name: string;
+  name!: string;
 
   @Expose()
-  type: AccountTypeEnum;
+  type!: AccountTypeEnum;
 }
 
 class UserDto {
   @Expose()
-  sub: string;
+  sub!: string;
 
   @Expose()
-  email: string;
+  email!: string;
 
   @Expose()
   @Type(() => UserRoleDto)
-  role: UserRoleDto;
+  role!: UserRoleDto;
 
   @Expose()
   @Type(() => UserOrganizationDto)
-  organization: UserOrganizationDto;
+  organization!: UserOrganizationDto;
 }
 
 export class UserLoginResDto {
   @Expose()
-  accessToken: string;
+  accessToken!: string;
 
   @Expose()
   @Type(() => UserDto)
-  user: UserDto;
+  user!: UserDto;
 }

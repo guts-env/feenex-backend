@@ -5,7 +5,7 @@ import { DATABASE_URL_CONFIG_KEY } from '@/config/keys.config';
 
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
-  private pool: Pool;
+  private pool!: Pool;
 
   constructor(private readonly configService: ConfigService) {}
 

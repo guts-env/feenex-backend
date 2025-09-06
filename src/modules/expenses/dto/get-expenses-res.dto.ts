@@ -3,9 +3,9 @@ import GetExpenseResDto from '@/modules/expenses/dto/get-expense-res.dto';
 
 export default class GetExpensesResDto {
   @Expose()
-  count: number;
+  count!: number;
 
   @Expose()
   @Type(() => GetExpenseResDto)
-  data: GetExpenseResDto[];
+  data!: GetExpenseResDto[];
 }

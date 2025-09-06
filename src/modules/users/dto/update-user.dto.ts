@@ -6,5 +6,5 @@ export class UpdateUserDto extends PartialType(
   OmitType(CreateUserDto, ['email', 'password'] as const),
 ) {
   @IsUUID('4', { message: 'Invalid user ID format' })
-  id: string;
+  id!: string;
 }

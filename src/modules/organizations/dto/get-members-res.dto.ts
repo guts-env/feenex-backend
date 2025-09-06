@@ -3,8 +3,8 @@ import GetUserDto from '@/modules/users/dto/get-user.dto';
 
 export default class GetMembersResDto {
   @IsNumber()
-  count: number;
+  count!: number;
 
   @IsArray()
-  data: GetUserDto[];
+  data!: GetUserDto[];
 }

@@ -8,40 +8,40 @@ import { type IRepositoryExpense } from '@/modules/expenses/types/expenses';
 
 export default class GetExpenseResDto {
   @Expose()
-  id: string;
+  id!: string;
 
   @Expose()
   @Transform(({ obj }: { obj: IRepositoryExpense }) => obj.user_id)
-  userId: string;
+  userId!: string;
 
   @Expose()
   @Transform(({ obj }: { obj: IRepositoryExpense }) => obj.organization_id)
-  organizationId: string;
+  organizationId!: string;
 
   @Expose()
   @Transform(({ obj }: { obj: IRepositoryExpense }) => obj.category_id)
-  categoryId: string;
+  categoryId!: string;
 
   @Expose()
-  amount: number;
+  amount!: number;
 
   @Expose()
-  status: ExpenseStatusEnum;
+  status!: ExpenseStatusEnum;
 
   @Expose()
   @Transform(({ obj }: { obj: IRepositoryExpense }) => obj.merchant_name)
-  merchantName: string;
+  merchantName!: string;
 
   @Expose()
-  date: string;
+  date!: string;
 
   @Expose()
   @Transform(({ obj }: { obj: IRepositoryExpense }) => obj.created_at)
-  createdAt: Date;
+  createdAt!: Date;
 
   @Expose()
   @Transform(({ obj }: { obj: IRepositoryExpense }) => obj.updated_at)
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @Expose()
   @Transform(({ obj }: { obj: IRepositoryExpense }) => obj.verified_by)
