@@ -10,5 +10,7 @@ export const USER_INSUFFICIENT_PERMISSIONS =
   'User has insufficient permissions for operation';
 export const GENERATE_PRESIGNED_URL_ERROR =
   'Error occured while generating a presigned url.';
+export const FILE_KEY_DOES_NOT_START_WITH_ORG_ID =
+  'User requested for a file outside of their organization';
 export const NO_ORG_PERMISSIONS =
   'User is not authorized to manage this organization';
