@@ -3,6 +3,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import AwsConfig from '@/config/aws.config';
+import GcpConfig from '@/config/gcp.config';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { UsersModule } from '@/modules/users/users.module';
 import { OrganizationsModule } from '@/modules/organizations/organizations.module';
@@ -17,7 +18,7 @@ import { ReportsModule } from '@/modules/reports/reports.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [AwsConfig],
+      load: [AwsConfig, GcpConfig],
     }),
     ThrottlerModule.forRoot([
       {

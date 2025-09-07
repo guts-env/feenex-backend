@@ -1,12 +1,27 @@
 import { Expose, Transform, Type } from 'class-transformer';
-import {
-  ExpenseItemDto,
-  ExpenseOtherDetailDto,
-} from '@/modules/expenses/dto/create-expense.dto';
 import BaseCategoryResDto from '@/modules/categories/dto/base-category-res.dto';
+import UserResDto from '@/modules/users/dto/base-user-res.dto';
 import { type IBaseRepositoryExpense } from '@/modules/expenses/types/expenses';
 import { type ExpenseStatus } from '@/database/types/db';
-import UserResDto from '@/modules/users/dto/base-user-res.dto';
+
+class ExpenseItemResDto {
+  @Expose()
+  name!: string;
+
+  @Expose()
+  quantity!: number;
+
+  @Expose()
+  price!: number;
+}
+
+class ExpenseOtherDetailResDto {
+  @Expose()
+  key!: string;
+
+  @Expose()
+  value!: string;
+}
 
 export default class GetExpenseResDto {
   @Expose()
@@ -45,13 +60,13 @@ export default class GetExpenseResDto {
   photos?: string[];
 
   @Expose()
-  @Type(() => ExpenseItemDto)
-  items?: ExpenseItemDto[];
+  @Type(() => ExpenseItemResDto)
+  items?: ExpenseItemResDto[];
 
   @Expose()
   @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.other_details)
-  @Type(() => ExpenseOtherDetailDto)
-  otherDetails?: ExpenseOtherDetailDto[];
+  @Type(() => ExpenseOtherDetailResDto)
+  otherDetails?: ExpenseOtherDetailResDto[];
 
   @Expose()
   @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.verified_by)

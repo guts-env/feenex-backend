@@ -1,6 +1,5 @@
 import { type IBaseRepositoryInterface } from '@/common/modules/base/types/base';
 import {
-  JsonValue,
   type CurrencyCode,
   type ExpenseSource,
   type ExpenseStatus,
@@ -42,28 +41,4 @@ export interface IBaseRepositoryExpense extends IBaseRepositoryInterface {
 
 export interface IRepositoryExpenseWithOrg extends IBaseRepositoryExpense {
   organization_id: string;
-}
-
-export interface IExpenseQueryResult {
-  id: string;
-  amount: string;
-  category_id: string;
-  category_name: string;
-  currency: CurrencyCode;
-  source: ExpenseSource;
-  status: ExpenseStatus;
-  merchant_name: string;
-  photos?: string[] | null;
-  date: Date;
-  description?: string | null;
-  items?: JsonValue | null;
-  other_details?: JsonValue | null;
-  created_at: Date;
-  updated_at: Date;
-  verified_by: string;
-  verified_by_email: string;
-  created_by: string;
-  created_by_email: string;
-  updated_by: string;
-  updated_by_email: string;
 }

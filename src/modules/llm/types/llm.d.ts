@@ -4,11 +4,11 @@ import {
 } from '@/modules/expenses/types/expenses';
 
 export interface IExtractedData {
-  total_amount: number;
-  merchant_name: string;
+  amount: string;
+  merchantName: string;
   items: IExpenseItem[];
-  other_details: IExpenseOtherDetails[];
-  date: Date;
+  otherDetails: IExpenseOtherDetails[];
+  date: string;
   category: string;
 }
 

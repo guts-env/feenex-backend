@@ -7,32 +7,17 @@ import {
   type IExpenseItem,
   type IExpenseOtherDetails,
   type IBaseRepositoryExpense,
-  IExpenseQueryResult,
 } from '@/modules/expenses/types/expenses';
 import {
-  type Categories,
-  type DB,
-  type Users,
+  ExpenseSource,
+  ExpenseStatus,
   type CurrencyCode,
-  type Expenses,
 } from '@/database/types/db';
 import { SelectQueryBuilder } from 'kysely';
 
 @Injectable()
 export class ExpensesRepository extends BaseRepository {
-  private addExpenseSelections(
-    query: SelectQueryBuilder<
-      DB & {
-        e: Expenses;
-        c: Categories;
-        u: Users;
-        u2: Users;
-        u3: Users;
-      },
-      'e' | 'c' | 'u' | 'u2' | 'u3',
-      object
-    >,
-  ) {
+  private addExpenseSelections(query: SelectQueryBuilder<any, any, any>) {
     return query.select([
       'e.id',
       'e.amount',
@@ -65,61 +50,48 @@ export class ExpensesRepository extends BaseRepository {
         .innerJoin('categories as c', 'e.category_id', 'c.id')
         .innerJoin('users as u', 'e.created_by', 'u.id')
         .innerJoin('users as u2', 'e.updated_by', 'u2.id')
-        .innerJoin('users as u3', 'e.verified_by', 'u3.id')
-        .select([
-          'e.id',
-          'e.amount',
-          'e.items',
-          'e.other_details',
-          'e.source',
-          'e.status',
-          'e.merchant_name',
-          'e.currency',
-          'e.date',
-          'e.description',
-          'e.photos',
-          'e.created_at',
-          'e.updated_at',
-          'c.id as category_id',
-          'c.name as category_name',
-          'u.id as created_by',
-          'u.email as created_by_email',
-          'u2.id as updated_by',
-          'u2.email as updated_by_email',
-          'u3.id as verified_by',
-          'u3.email as verified_by_email',
-        ]),
+        .leftJoin('users as u3', 'e.verified_by', 'u3.id'),
     );
   }
 
   private transformExpenseRow(
-    row: IExpenseQueryResult,
+    row: Record<string, any>,
   ): IBaseRepositoryExpense {
-    return {
-      ...row,
+    const result: IBaseRepositoryExpense = {
+      id: row['id'] as string,
+      amount: row['amount'] as string,
+      currency: row['currency'] as CurrencyCode,
+      date: row['date'] as Date,
+      description: row['description'] as string | null,
+      merchant_name: row['merchant_name'] as string,
+      photos: row['photos'] as string[] | null,
+      source: row['source'] as ExpenseSource,
+      status: row['status'] as ExpenseStatus,
+      created_at: row['created_at'] as Date,
+      updated_at: row['updated_at'] as Date,
       category: {
-        id: row.category_id,
-        name: row.category_name,
+        id: row['category_id'] as string,
+        name: row['category_name'] as string,
       },
-      items: row.items
-        ? (JSON.parse(row.items as string) as IExpenseItem[])
-        : null,
-      other_details: row.other_details
-        ? (JSON.parse(row.other_details as string) as IExpenseOtherDetails[])
-        : null,
-      verified_by: {
-        id: row.verified_by,
-        email: row.verified_by_email,
-      },
+      items: row['items'] as IExpenseItem[],
+      other_details: row['other_details'] as IExpenseOtherDetails[],
       created_by: {
-        id: row.created_by,
-        email: row.created_by_email,
+        id: row['created_by'] as string,
+        email: row['created_by_email'] as string,
       },
       updated_by: {
-        id: row.updated_by,
-        email: row.updated_by_email,
+        id: row['updated_by'] as string,
+        email: row['updated_by_email'] as string,
       },
+      verified_by: row['verified_by']
+        ? {
+            id: row['verified_by'] as string,
+            email: row['verified_by_email'] as string,
+          }
+        : null,
     };
+
+    return result;
   }
 
   async getExpenses(
@@ -147,7 +119,7 @@ export class ExpensesRepository extends BaseRepository {
         .innerJoin('categories as c', 'e.category_id', 'c.id')
         .innerJoin('users as u', 'e.created_by', 'u.id')
         .innerJoin('users as u2', 'e.updated_by', 'u2.id')
-        .innerJoin('users as u3', 'e.verified_by', 'u3.id')
+        .leftJoin('users as u3', 'e.verified_by', 'u3.id')
         .where('e.organization_id', '=', orgId);
 
       if (categories && categories.length > 0) {
@@ -338,7 +310,7 @@ export class ExpensesRepository extends BaseRepository {
           .innerJoin('categories as c', 'e.category_id', 'c.id')
           .innerJoin('users as u', 'e.created_by', 'u.id')
           .innerJoin('users as u2', 'e.updated_by', 'u2.id')
-          .innerJoin('users as u3', 'e.verified_by', 'u3.id'),
+          .leftJoin('users as u3', 'e.verified_by', 'u3.id'),
       )
         .where('e.id', '=', updatedExpense.id)
         .executeTakeFirstOrThrow();

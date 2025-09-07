@@ -45,9 +45,5 @@ export default registerAs<IAwsConfig>(AWS_CONFIG_KEY, () => {
       accessKeyId: AWS_ACCESS_KEY_ID!,
       secretAccessKey: AWS_SECRET_ACCESS_KEY!,
     },
-    textract: {
-      maxRetries: 3,
-      timeout: 30000, // 30 seconds
-    },
   };
 });

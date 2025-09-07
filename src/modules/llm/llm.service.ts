@@ -1,4 +1,97 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import OpenAI from 'openai';
+import { OPENAI_API_KEY_CONFIG_KEY } from '@/config/keys.config';
+import { type IExtractedData } from '@/modules/llm/types/llm';
 
 @Injectable()
-export class LlmService {}
+export class LlmService {
+  private client: OpenAI;
+  private readonly model = 'gpt-4o-mini';
+  private readonly logger = new Logger(LlmService.name);
+
+  constructor(private readonly configService: ConfigService) {
+    this.client = new OpenAI({
+      apiKey: this.configService.get<string>(OPENAI_API_KEY_CONFIG_KEY)!,
+    });
+  }
+
+  async analyzeData(ocrText: string): Promise<IExtractedData> {
+    try {
+      const prompt = `
+      Extract receipt data as JSON:
+      {
+        "merchantName": "string",
+        "amount": number,
+        "date": "YYYY-MM-DD|null", 
+        "category": "grocery|restaurant|retail|gas|pharmacy|other",
+        "items": [{"name": "string", "price": number, "quantity": number}]
+        "otherDetails": [{"key": "string", "value": string}]
+      }
+
+      IMPORTANT PRICING RULES:
+      - Do not tag discounts, taxes, or other fees as items. Be mindful of negative prices.
+      - If quantity and price are both shown, determine if the price is:
+        a) Unit price (price per single item) - multiply by quantity for line total
+        b) Line total (already includes quantity) - divide by quantity for unit price
+      - Store the UNIT PRICE in the "price" field (price per single item)
+      - Look for context clues like "@ X.XX each", "unit price", "ea", or line totals that help determine pricing type
+      - If unclear whether price is unit or total, assume it's the line total and calculate unit price
+      - Evaluate the price if it has a - sign, it is a discount or refund. It should reflect the - sign and should not be removed.
+
+      Return only valid JSON. Use null for missing data. 
+
+      ${ocrText}
+    `;
+
+      const response = await this.client.chat.completions.create({
+        model: this.model,
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' },
+        temperature: 0.1,
+        max_completion_tokens: 1000,
+      });
+
+      if (!response.choices[0].message.content) {
+        this.logger.error('No response from LLM');
+        throw new InternalServerErrorException(
+          'Something went wrong while analyzing the receipt data.',
+        );
+      }
+
+      const rawData = response.choices[0].message.content.trim();
+      const analyzedData = this.validateAndSanitizeData(rawData);
+
+      return analyzedData;
+    } catch (error) {
+      this.logger.error(error);
+      throw new InternalServerErrorException(
+        'Something went wrong while analyzing the receipt data.',
+      );
+    }
+  }
+
+  private validateAndSanitizeData(data: string): IExtractedData {
+    const jsonData = JSON.parse(data) as IExtractedData;
+
+    const merchantName = jsonData.merchantName || 'Merchant Name';
+    const amount = jsonData.amount || '1.00';
+    const date = jsonData.date || '';
+    const category = jsonData.category || 'Other';
+    const items = jsonData.items || [];
+    const otherDetails = jsonData.otherDetails || [];
+
+    return {
+      merchantName,
+      amount,
+      date,
+      category,
+      items,
+      otherDetails,
+    };
+  }
+}
