@@ -234,7 +234,7 @@ export class ExpensesRepository extends BaseRepository {
     } = dto;
 
     try {
-      const createdExpense = await this.db
+      await this.db
         .insertInto('expenses')
         .values({
           organization_id: orgId,
@@ -257,8 +257,6 @@ export class ExpensesRepository extends BaseRepository {
         })
         .returningAll()
         .executeTakeFirstOrThrow();
-
-      return createdExpense;
     } catch (error) {
       this.handleDatabaseError(error);
     }

@@ -21,6 +21,8 @@ export class OcrService {
   }
 
   async extractText(imageUrl: string) {
+    const startTime = Date.now();
+
     const [result] = await this.client.annotateImage({
       features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
       image: {
@@ -33,6 +35,12 @@ export class OcrService {
         },
       },
     });
+
+    const endTime = Date.now();
+    const processingTimeMs = endTime - startTime;
+    console.log(`OCR processing time: ${processingTimeMs} ms`);
+
+    console.log(result.fullTextAnnotation?.text);
 
     if (!result.fullTextAnnotation?.text) {
       throw new BadRequestException('No text found in the image');

@@ -51,7 +51,7 @@ export class UploadService {
     try {
       const command = new PutObjectCommand({
         Bucket: this.bucket,
-        Key: this.generateKey(orgId, dto.key, dto.filename),
+        Key: this.generateKey(orgId, dto.key, `${Date.now()}-${dto.filename}`),
         ContentType: dto.contentType,
       });
 

@@ -311,7 +311,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     )
     .addColumn('merchant_name', 'varchar(200)', (col) => col.notNull())
     .addColumn('photos', sql`text[]`)
-    .addColumn('amount', sql`decimal(5,2)`, (col) => col.notNull())
+    .addColumn('amount', sql`decimal(8,2)`, (col) => col.notNull())
     .addColumn('currency', sql`currency_code`, (col) =>
       col.notNull().defaultTo('PHP'),
     )
