@@ -213,14 +213,11 @@ export async function up(db: Kysely<any>): Promise<void> {
       col.notNull().references('users.id').onDelete('cascade'),
     )
     .addColumn('ocr_text', 'text')
-    .addColumn('entities', 'jsonb')
     .addColumn('status', sql`processing_status`, (col) =>
       col.notNull().defaultTo('pending'),
     )
-    .addColumn('confidence_score', sql`decimal(5,2)`)
     .addColumn('error_message', 'text')
     .addColumn('processing_time_ms', 'integer')
-    .addColumn('image_path', 'text', (col) => col.notNull())
     .addColumn('created_at', 'timestamptz', (col) =>
       col.notNull().defaultTo(sql`now()`),
     )

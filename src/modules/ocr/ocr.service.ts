@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { OcrRepository } from '@/modules/ocr/ocr.repository';
@@ -8,6 +13,7 @@ import { type IGcpConfig } from '@/common/types/config';
 @Injectable()
 export class OcrService {
   private readonly client: ImageAnnotatorClient;
+  private readonly logger = new Logger(OcrService.name);
 
   constructor(
     private readonly configService: ConfigService,
@@ -20,34 +26,76 @@ export class OcrService {
     });
   }
 
-  async extractText(imageUrl: string) {
-    const startTime = Date.now();
+  async extractText(orgId: string, userId: string, imageUrls: string[]) {
+    const ocrRecord = await this.ocrRepository.create(orgId, userId);
 
-    const [result] = await this.client.annotateImage({
-      features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
-      image: {
-        source: { imageUri: imageUrl },
-      },
-      imageContext: {
-        languageHints: ['en', 'fil', 'tl', 'vnd', 'zh'],
-        textDetectionParams: {
-          enableTextDetectionConfidenceScore: true,
-        },
-      },
-    });
+    try {
+      const startTime = Date.now();
 
-    const endTime = Date.now();
-    const processingTimeMs = endTime - startTime;
-    console.log(`OCR processing time: ${processingTimeMs} ms`);
+      const [results] = await Promise.all(
+        imageUrls.map(
+          async (imageUrl) =>
+            await this.client.annotateImage({
+              features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
+              image: {
+                source: { imageUri: imageUrl },
+              },
+              imageContext: {
+                languageHints: ['en', 'fil', 'tl', 'vnd', 'zh'],
+                textDetectionParams: {
+                  enableTextDetectionConfidenceScore: true,
+                },
+              },
+            }),
+        ),
+      );
 
-    console.log(result.fullTextAnnotation?.text);
+      if (results.some((result) => result.error)) {
+        await this.ocrRepository.update(ocrRecord.id, {
+          status: 'failed',
+          errorMessage: results.find((result) => result.error)?.error?.message,
+        });
 
-    if (!result.fullTextAnnotation?.text) {
-      throw new BadRequestException('No text found in the image');
+        this.logger.error(
+          results.find((result) => result.error)?.error?.message,
+        );
+
+        throw new InternalServerErrorException(
+          'Something went wrong while extracting receipt data',
+        );
+      }
+
+      const endTime = Date.now();
+      const processingTimeMs = endTime - startTime;
+
+      await this.ocrRepository.update(ocrRecord.id, {
+        ocrText: results
+          .map((result) => result.fullTextAnnotation?.text)
+          .join('\n'),
+        processingTimeMs,
+        status: 'completed',
+      });
+
+      if (!results.some((result) => result.fullTextAnnotation?.text)) {
+        throw new BadRequestException('No text found in the image');
+      }
+
+      return {
+        ocrResultId: ocrRecord.id,
+        ocrText: results
+          .map((result) => result.fullTextAnnotation?.text)
+          .join('\n'),
+      };
+    } catch (error) {
+      await this.ocrRepository.update(ocrRecord.id, {
+        status: 'failed',
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      });
+
+      this.logger.error(error);
+      throw new InternalServerErrorException(
+        'Something went wrong while extracting receipt data',
+      );
     }
-
-    /* TODO: save to database */
-
-    return result.fullTextAnnotation?.text;
   }
 }

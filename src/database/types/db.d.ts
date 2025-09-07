@@ -152,10 +152,8 @@ export interface Merchants {
 export interface OcrResults {
   confidence_score: Numeric | null;
   created_at: Generated<Timestamp>;
-  entities: Json | null;
   error_message: string | null;
   id: Generated<string>;
-  image_path: string;
   ocr_text: string | null;
   organization_id: string;
   processing_time_ms: number | null;

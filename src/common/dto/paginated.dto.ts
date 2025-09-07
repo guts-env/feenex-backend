@@ -4,7 +4,9 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Max,
   MaxLength,
+  Min,
   ValidateNested,
 } from 'class-validator';
 
@@ -20,11 +22,20 @@ class OrderByDto<T> {
 
 export default class PaginatedDto<T> {
   @IsOptional()
+  @Transform(({ value }: { value: string }) =>
+    value ? parseInt(value, 10) : undefined,
+  )
   @IsNumber()
+  @Max(50, { message: 'Offset must be at most 50' })
   offset?: number;
 
   @IsOptional()
+  @Transform(({ value }: { value: string }) =>
+    value ? parseInt(value, 10) : undefined,
+  )
   @IsNumber()
+  @Min(1, { message: 'Limit must be at least 1' })
+  @Max(50, { message: 'Limit must be at most 50' })
   limit?: number;
 
   @IsOptional()

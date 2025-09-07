@@ -6,6 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { OPENAI_API_KEY_CONFIG_KEY } from '@/config/keys.config';
+import { LLmRepository } from '@/modules/llm/llm.repository';
 import { type IExtractedData } from '@/modules/llm/types/llm';
 
 @Injectable()
@@ -14,13 +15,24 @@ export class LlmService {
   private readonly model = 'gpt-4o-mini';
   private readonly logger = new Logger(LlmService.name);
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly llmRepository: LLmRepository,
+  ) {
     this.client = new OpenAI({
       apiKey: this.configService.get<string>(OPENAI_API_KEY_CONFIG_KEY)!,
     });
   }
 
-  async analyzeData(ocrText: string): Promise<IExtractedData> {
+  async analyzeData({
+    ocrText,
+    ocrResultId,
+  }: {
+    ocrText: string;
+    ocrResultId: string;
+  }): Promise<{ llmResultId: string; data: IExtractedData }> {
+    const llmRecord = await this.llmRepository.create(ocrResultId);
+
     try {
       const prompt = `
         Extract receipt data as JSON: 
@@ -81,25 +93,41 @@ export class LlmService {
 
       const endTime = Date.now();
       const processingTimeMs = endTime - startTime;
-      console.log(`LLM processing time: ${processingTimeMs} ms`);
 
       if (!response.choices[0].message.content) {
         this.logger.error('No response from LLM');
+        await this.llmRepository.update(llmRecord.id, {
+          status: 'failed',
+          errorMessage: 'No response from LLM',
+        });
+
         throw new InternalServerErrorException(
-          'Something went wrong while analyzing the receipt data.',
+          'Something went wrong while analyzing the receipt data',
         );
       }
-
-      /* TODO: save to database */
 
       const rawData = response.choices[0].message.content.trim();
       const analyzedData = this.sanitizeData(rawData);
 
-      return analyzedData;
+      await this.llmRepository.update(llmRecord.id, {
+        extractedData: analyzedData,
+        processingTimeMs,
+        status: 'completed',
+      });
+
+      return {
+        llmResultId: llmRecord.id,
+        data: analyzedData,
+      };
     } catch (error) {
+      await this.llmRepository.update(llmRecord.id, {
+        status: 'failed',
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      });
+
       this.logger.error(error);
       throw new InternalServerErrorException(
-        'Something went wrong while analyzing the receipt data.',
+        'Something went wrong while analyzing the receipt data',
       );
     }
   }
