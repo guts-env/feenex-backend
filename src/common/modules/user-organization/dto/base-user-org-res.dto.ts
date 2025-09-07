@@ -1,7 +1,7 @@
 import { Expose } from 'class-transformer';
 import { type OrganizationType } from '@/database/types/db';
 
-export default class GetOrganizationResDto {
+export default class UserOrganizationResDto {
   @Expose()
   id!: string;
 

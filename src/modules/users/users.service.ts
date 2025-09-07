@@ -1,7 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
 import { UsersRepository } from '@/modules/users/users.repository';
+import UserProfileDto from '@/modules/users/dto/user-profile.dto';
 import {
-  type IUserWithOrganizationAndRole,
+  type IUserWithOrgAndRole,
   type IUser,
 } from '@/modules/users/types/users';
 
@@ -9,14 +11,16 @@ import {
 export class UsersService {
   constructor(private readonly userRepository: UsersRepository) {}
 
-  async findById(id: string): Promise<IUser> {
+  async findById(id: string): Promise<UserProfileDto> {
     const user = await this.userRepository.findById(id);
 
     if (!user) {
       throw new NotFoundException({ message: 'User does not exist.' });
     }
 
-    return this.transformRepositoryUser(user);
+    const transformedUser = this.transformRepositoryUser(user);
+
+    return plainToInstance(UserProfileDto, transformedUser);
   }
 
   async findByEmail(
@@ -33,24 +37,14 @@ export class UsersService {
       return null;
     }
 
-    return this.transformRepositoryUser(user);
+    return this.transformRepositoryUser(user as IUserWithOrgAndRole);
   }
 
-  transformRepositoryUser(user: IUserWithOrganizationAndRole): IUser {
-    const {
-      org_id,
-      org_name,
-      org_type,
-      role_id,
-      role_name,
-      created_at,
-      updated_at,
-    } = user;
+  transformRepositoryUser(user: IUserWithOrgAndRole): IUser {
+    const { org_id, org_name, org_type, role_id, role_name } = user;
 
     return {
       ...user,
-      createdAt: created_at,
-      updatedAt: updated_at,
       organization: {
         id: org_id,
         name: org_name,

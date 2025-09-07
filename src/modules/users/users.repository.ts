@@ -1,37 +1,37 @@
 import { Injectable } from '@nestjs/common';
-import { QueryResult } from 'pg';
-import { DatabaseService } from '@/database/database.service';
+import {
+  type IBaseRepositoryUser,
+  type IUserWithOrgAndRole,
+} from '@/modules/users/types/users';
 import { BaseRepository } from '@/common/modules/base/base.repository';
-import { type IUserWithOrganizationAndRole } from '@/modules/users/types/users';
 
 @Injectable()
 export class UsersRepository extends BaseRepository {
-  constructor(private readonly db: DatabaseService) {
-    super();
-  }
-
-  async findById(id: string): Promise<IUserWithOrganizationAndRole | null> {
+  async findById(id: string): Promise<IUserWithOrgAndRole> {
     try {
-      const result: QueryResult<IUserWithOrganizationAndRole> =
-        await this.db.query(
-          `
-          SELECT 
-            u.*,
-            o.id as org_id,
-            o.name as org_name,
-            o.type as org_type,
-            r.id as role_id,
-            r.name as role_name
-          FROM users u
-            JOIN user_organizations uo ON u.id = uo.user_id
-            JOIN organizations o ON uo.organization_id = o.id
-            JOIN roles r ON uo.role_id = r.id
-          WHERE u.id = $1
-        `,
-          [id],
-        );
+      const result = await this.db
+        .selectFrom('users as u')
+        .innerJoin('user_organizations as uo', 'u.id', 'uo.user_id')
+        .innerJoin('organizations as o', 'uo.organization_id', 'o.id')
+        .innerJoin('roles as r', 'uo.role_id', 'r.id')
+        .select([
+          'u.id',
+          'u.email',
+          'u.first_name',
+          'u.middle_name',
+          'u.last_name',
+          'u.created_at',
+          'u.updated_at',
+          'o.id as org_id',
+          'o.name as org_name',
+          'o.type as org_type',
+          'r.id as role_id',
+          'r.name as role_name',
+        ])
+        .where('u.id', '=', id)
+        .executeTakeFirstOrThrow();
 
-      return result.rows[0] || null;
+      return result;
     } catch (error: any) {
       this.handleDatabaseError(error);
     }
@@ -40,30 +40,41 @@ export class UsersRepository extends BaseRepository {
   async findByEmail(
     email: string,
     isRegistration?: boolean,
-  ): Promise<IUserWithOrganizationAndRole | null> {
+  ): Promise<IUserWithOrgAndRole | Partial<IBaseRepositoryUser> | undefined> {
     try {
-      let queryStatement = `
-        SELECT u.*,
-          o.id as org_id,
-          o.name as org_name,
-          o.type as org_type,
-          r.id as role_id,
-          r.name as role_name
-        FROM users u
-        JOIN user_organizations uo ON u.id = uo.user_id
-        JOIN organizations o ON uo.organization_id = o.id
-        JOIN roles r ON uo.role_id = r.id
-        WHERE u.email = $1
-      `;
-
       if (isRegistration) {
-        queryStatement = `SELECT * FROM users WHERE email = $1`;
+        const result = await this.db
+          .selectFrom('users')
+          .select(['id', 'email'])
+          .where('email', '=', email)
+          .executeTakeFirst();
+
+        return result || undefined;
+      } else {
+        const result = await this.db
+          .selectFrom('users as u')
+          .innerJoin('user_organizations as uo', 'u.id', 'uo.user_id')
+          .innerJoin('organizations as o', 'uo.organization_id', 'o.id')
+          .innerJoin('roles as r', 'uo.role_id', 'r.id')
+          .select([
+            'u.id',
+            'u.email',
+            'u.first_name',
+            'u.middle_name',
+            'u.last_name',
+            'u.created_at',
+            'u.updated_at',
+            'o.id as org_id',
+            'o.name as org_name',
+            'o.type as org_type',
+            'r.id as role_id',
+            'r.name as role_name',
+          ])
+          .where('u.email', '=', email)
+          .executeTakeFirstOrThrow();
+
+        return result;
       }
-
-      const result: QueryResult<IUserWithOrganizationAndRole> =
-        await this.db.query(queryStatement, [email]);
-
-      return result.rows[0] || null;
     } catch (error: any) {
       this.handleDatabaseError(error);
     }

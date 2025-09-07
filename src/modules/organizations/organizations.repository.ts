@@ -1,38 +1,69 @@
 import { Injectable } from '@nestjs/common';
-import { QueryResult } from 'pg';
-import { DatabaseService } from '@/database/database.service';
 import { BaseRepository } from '@/common/modules/base/base.repository';
-import GetMembersDto, {
-  type GetMembersDtoValues,
-} from '@/modules/organizations/dto/get-members.dto';
+import GetMembersDto from '@/modules/organizations/dto/get-members.dto';
 import UpdateOrganizationDto from '@/modules/organizations/dto/update-organization.dto';
 import RemoveMemberDto from '@/modules/organizations/dto/remove-member.dto';
 import UpdateMemberRoleDto from '@/modules/organizations/dto/update-member-role.dto';
-import { SortOrderEnum } from '@/common/constants/enums';
-import { type IRepositoryOrganization } from '@/modules/organizations/types/organizations';
-import { type IRepositoryUser } from '@/modules/users/types/users';
 import { DEFAULT_QUERY_LIMIT } from '@/config/db.config';
+import { type IRepositoryOrganization } from '@/modules/organizations/types/organizations';
+import { type IRepositoryUserWithRole } from '@/modules/users/types/users';
 
 @Injectable()
 export class OrganizationRepository extends BaseRepository {
-  constructor(private readonly db: DatabaseService) {
-    super();
+  private get baseQuery() {
+    return this.db
+      .selectFrom('organizations as org')
+      .innerJoin('users as u', 'org.created_by', 'u.id')
+      .innerJoin('users as u2', 'org.updated_by', 'u2.id')
+      .select([
+        'org.id',
+        'org.name',
+        'org.type',
+        'org.created_at',
+        'org.updated_at',
+        'u.id as created_by',
+        'u.email as created_by_email',
+        'u2.id as updated_by',
+        'u2.email as updated_by_email',
+      ]);
   }
 
-  async findByUserId(id: string): Promise<IRepositoryOrganization[]> {
+  async findByUserId(userId: string): Promise<IRepositoryOrganization[]> {
     try {
-      const result: QueryResult<IRepositoryOrganization> = await this.db.query(
-        `
-        SELECT org.*
-        FROM organizations org
-        JOIN user_organizations user_org
-        ON org.id = user_org.organization_id
-        WHERE user_org.user_id = $1
-      `,
-        [id],
-      );
+      const result = await this.db
+        .selectFrom('organizations as org')
+        .innerJoin(
+          'user_organizations as user_org',
+          'org.id',
+          'user_org.organization_id',
+        )
+        .innerJoin('users as u', 'org.created_by', 'u.id')
+        .innerJoin('users as u2', 'org.updated_by', 'u2.id')
+        .select([
+          'org.id',
+          'org.name',
+          'org.type',
+          'org.created_at',
+          'org.updated_at',
+          'u.id as created_by',
+          'u.email as created_by_email',
+          'u2.id as updated_by',
+          'u2.email as updated_by_email',
+        ])
+        .where('user_org.user_id', '=', userId)
+        .execute();
 
-      return result.rows;
+      return result.map((org) => ({
+        ...org,
+        created_by: {
+          id: org.created_by,
+          email: org.created_by_email,
+        },
+        updated_by: {
+          id: org.updated_by,
+          email: org.updated_by_email,
+        },
+      }));
     } catch (error: any) {
       this.handleDatabaseError(error);
     }
@@ -40,16 +71,21 @@ export class OrganizationRepository extends BaseRepository {
 
   async findById(id: string): Promise<IRepositoryOrganization> {
     try {
-      const result: QueryResult<IRepositoryOrganization> = await this.db.query(
-        `
-        SELECT org.*
-        FROM organizations org
-        WHERE org.id = $1
-      `,
-        [id],
-      );
+      const result = await this.baseQuery
+        .where('org.id', '=', id)
+        .executeTakeFirstOrThrow();
 
-      return result.rows[0];
+      return {
+        ...result,
+        created_by: {
+          id: result.created_by,
+          email: result.created_by_email,
+        },
+        updated_by: {
+          id: result.updated_by,
+          email: result.updated_by_email,
+        },
+      };
     } catch (error: any) {
       this.handleDatabaseError(error);
     }
@@ -62,17 +98,28 @@ export class OrganizationRepository extends BaseRepository {
     const { name } = dto;
 
     try {
-      const result: QueryResult<IRepositoryOrganization> = await this.db.query(
-        `
-        UPDATE organizations
-        SET name = $1
-        WHERE id = $2
-        RETURNING *
-      `,
-        [name, id],
-      );
+      const updatedOrg = await this.db
+        .updateTable('organizations')
+        .set({ name })
+        .where('id', '=', id)
+        .returningAll()
+        .executeTakeFirstOrThrow();
 
-      return result.rows[0];
+      const result = await this.baseQuery
+        .where('id', '=', updatedOrg.id)
+        .executeTakeFirstOrThrow();
+
+      return {
+        ...result,
+        created_by: {
+          id: result.created_by,
+          email: result.created_by_email,
+        },
+        updated_by: {
+          id: result.updated_by,
+          email: result.updated_by_email,
+        },
+      };
     } catch (error: any) {
       this.handleDatabaseError(error);
     }
@@ -82,91 +129,110 @@ export class OrganizationRepository extends BaseRepository {
     userId: string,
     organizationId: string,
     query: GetMembersDto,
-  ): Promise<IRepositoryUser[]> {
+  ): Promise<{ count: number; data: IRepositoryUserWithRole[] }> {
     const {
       roleId,
       search,
       offset,
       limit = DEFAULT_QUERY_LIMIT,
-      sortBy,
-      sortOrder,
+      orderBy,
     } = query;
 
-    let conditionIndex = 3;
-    const conditions: string[] = [];
-    const params: GetMembersDtoValues = [];
-
-    if (roleId) {
-      conditions.push(`uo.role_id = $${conditionIndex}`);
-      params.push(roleId);
-      conditionIndex++;
-    }
-
-    if (search) {
-      conditions.push(`(
-        u.first_name ILIKE $${conditionIndex} OR 
-        u.last_name ILIKE $${conditionIndex} OR 
-        u.email ILIKE $${conditionIndex}
-      )`);
-      params.push(`%${search}%`);
-      conditionIndex++;
-    }
-
-    let queryStatement =
-      params.length > 0 ? `AND ${conditions.join(' AND ')} ` : '';
-
-    if (sortBy) {
-      /* TODO: replace with proper sorting logic */
-      queryStatement += `ORDER BY u.created_at `;
-    } else {
-      queryStatement += `ORDER BY u.created_at `;
-    }
-
-    if (sortOrder) {
-      queryStatement += `$${sortOrder} `;
-      params.push(sortOrder);
-      conditionIndex++;
-    } else {
-      queryStatement += `${SortOrderEnum.DESC} `;
-    }
-
-    if (offset) {
-      queryStatement += `OFFSET $${conditionIndex} `;
-      params.push(offset);
-      conditionIndex++;
-    }
-
-    if (limit) {
-      queryStatement += `LIMIT $${conditionIndex}`;
-      params.push(limit);
-    }
-
     try {
-      const result: QueryResult<IRepositoryUser> = await this.db.query(
-        `
-        SELECT u.*
-        FROM users u
-        JOIN user_organizations uo ON u.id = uo.user_id
-        WHERE uo.user_id != $1 AND uo.organization_id = $2
-        ${queryStatement}
-      `,
-        [userId, organizationId, ...params],
-      );
+      let membersBaseQuery = this.db
+        .selectFrom('users as u')
+        .innerJoin('user_organizations as uo', 'u.id', 'uo.user_id')
+        .innerJoin('roles as r', 'uo.role_id', 'r.id')
+        .where('uo.user_id', '!=', userId)
+        .where('uo.organization_id', '=', organizationId);
 
-      return result.rows;
+      if (roleId) {
+        membersBaseQuery = membersBaseQuery.where('uo.role_id', '=', roleId);
+      }
+
+      if (search) {
+        membersBaseQuery = membersBaseQuery.where((qb) =>
+          qb.or([
+            qb('u.first_name', 'ilike', `%${search}%`),
+            qb('u.last_name', 'ilike', `%${search}%`),
+            qb('u.email', 'ilike', `%${search}%`),
+          ]),
+        );
+      }
+
+      let dbQuery = membersBaseQuery.select([
+        'u.id',
+        'u.email',
+        'u.first_name',
+        'u.middle_name',
+        'u.last_name',
+        'u.created_at',
+        'u.updated_at',
+        'r.id as role_id',
+        'r.name as role_name',
+      ]);
+      const countQuery = membersBaseQuery.select(({ fn }) => [
+        fn.countAll().as('count'),
+      ]);
+
+      if (orderBy) {
+        dbQuery = dbQuery.orderBy(`u.${orderBy.field}`, orderBy.order);
+      } else {
+        dbQuery = dbQuery.orderBy('u.created_at', 'desc');
+      }
+
+      if (offset !== undefined) {
+        dbQuery = dbQuery.offset(offset);
+      }
+      if (limit !== undefined) {
+        dbQuery = dbQuery.limit(limit);
+      }
+
+      const [rows, countResult] = await Promise.all([
+        dbQuery.execute(),
+        countQuery.executeTakeFirst(),
+      ]);
+
+      const count = countResult ? Number(countResult.count) : 0;
+
+      return { count, data: rows };
     } catch (error: any) {
       this.handleDatabaseError(error);
     }
   }
 
-  async updateMemberRole(dto: UpdateMemberRoleDto) {
+  async updateMemberRole(
+    dto: UpdateMemberRoleDto,
+  ): Promise<IRepositoryUserWithRole> {
     const { userId, role } = dto;
 
     try {
-      return this.db.query(
-        `UPDATE user_organizations uo SET uo.role_id = $1 WHERE uo.user_id = $2`,
-        [role, userId],
-      );
+      const userOrg = await this.db
+        .updateTable('user_organizations')
+        .set({ role_id: role })
+        .where('user_id', '=', userId)
+        .returning('user_id')
+        .executeTakeFirstOrThrow();
+
+      const result = await this.db
+        .selectFrom('users as u')
+        .innerJoin('user_organizations as uo', 'u.id', 'uo.user_id')
+        .innerJoin('roles as r', 'uo.role_id', 'r.id')
+        .select([
+          'u.id',
+          'u.email',
+          'u.first_name',
+          'u.middle_name',
+          'u.last_name',
+          'u.created_at',
+          'u.updated_at',
+          'r.id as role_id',
+          'r.name as role_name',
+        ])
+        .where('u.id', '=', userOrg.user_id)
+        .executeTakeFirstOrThrow();
+
+      return result;
     } catch (error: any) {
       this.handleDatabaseError(error);
     }
@@ -176,13 +242,11 @@ export class OrganizationRepository extends BaseRepository {
     const { userId } = dto;
 
     try {
-      return this.db.query(
-        `
-          DELETE FROM user_organizations uo
-          WHERE uo.user_id = $1 AND uo.organization_id = $2
-      `,
-        [userId, orgId],
-      );
+      return this.db
+        .deleteFrom('user_organizations')
+        .where('user_id', '=', userId)
+        .where('organization_id', '=', orgId)
+        .execute();
     } catch (error: any) {
       this.handleDatabaseError(error);
     }

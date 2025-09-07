@@ -1,9 +1,9 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Pool, QueryResult, QueryResultRow } from 'pg';
-import { DATABASE_URL_CONFIG_KEY } from '@/config/keys.config';
 import { Kysely, PostgresDialect } from 'kysely';
-import { DB } from '@/database/types/db';
+import { DATABASE_URL_CONFIG_KEY } from '@/config/keys.config';
+import { type DB } from '@/database/types/db';
 
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
@@ -29,7 +29,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     await this.pool.end();
   }
 
-  getDb(): Kysely<DB> {
+  trx(): Kysely<DB> {
     return this.db;
   }
 

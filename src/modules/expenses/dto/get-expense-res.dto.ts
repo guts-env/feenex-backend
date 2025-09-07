@@ -1,51 +1,42 @@
-import { ExpenseStatusEnum } from '@/common/constants/enums';
 import { Expose, Transform, Type } from 'class-transformer';
 import {
   ExpenseItemDto,
   ExpenseOtherDetailDto,
 } from '@/modules/expenses/dto/create-expense.dto';
-import { type IRepositoryExpense } from '@/modules/expenses/types/expenses';
+import BaseCategoryResDto from '@/modules/categories/dto/base-category-res.dto';
+import { type IBaseRepositoryExpense } from '@/modules/expenses/types/expenses';
+import { type ExpenseStatus } from '@/database/types/db';
+import UserResDto from '@/modules/users/dto/base-user-res.dto';
 
 export default class GetExpenseResDto {
   @Expose()
   id!: string;
 
   @Expose()
-  @Transform(({ obj }: { obj: IRepositoryExpense }) => obj.user_id)
-  userId!: string;
-
-  @Expose()
-  @Transform(({ obj }: { obj: IRepositoryExpense }) => obj.organization_id)
-  organizationId!: string;
-
-  @Expose()
-  @Transform(({ obj }: { obj: IRepositoryExpense }) => obj.category_id)
-  categoryId!: string;
+  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.category)
+  @Type(() => BaseCategoryResDto)
+  category!: BaseCategoryResDto;
 
   @Expose()
   amount!: number;
 
   @Expose()
-  status!: ExpenseStatusEnum;
+  status!: ExpenseStatus;
 
   @Expose()
-  @Transform(({ obj }: { obj: IRepositoryExpense }) => obj.merchant_name)
+  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.merchant_name)
   merchantName!: string;
 
   @Expose()
   date!: string;
 
   @Expose()
-  @Transform(({ obj }: { obj: IRepositoryExpense }) => obj.created_at)
+  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.created_at)
   createdAt!: Date;
 
   @Expose()
-  @Transform(({ obj }: { obj: IRepositoryExpense }) => obj.updated_at)
+  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.updated_at)
   updatedAt!: Date;
-
-  @Expose()
-  @Transform(({ obj }: { obj: IRepositoryExpense }) => obj.verified_by)
-  verifiedBy?: string;
 
   @Expose()
   description?: string;
@@ -58,7 +49,22 @@ export default class GetExpenseResDto {
   items?: ExpenseItemDto[];
 
   @Expose()
-  @Transform(({ obj }: { obj: IRepositoryExpense }) => obj.other_details)
+  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.other_details)
   @Type(() => ExpenseOtherDetailDto)
   otherDetails?: ExpenseOtherDetailDto[];
+
+  @Expose()
+  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.verified_by)
+  @Type(() => UserResDto)
+  verifiedBy?: UserResDto;
+
+  @Expose()
+  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.created_by)
+  @Type(() => UserResDto)
+  createdBy!: UserResDto;
+
+  @Expose()
+  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.updated_by)
+  @Type(() => UserResDto)
+  updatedBy!: UserResDto;
 }

@@ -1,33 +1,26 @@
 import { Injectable } from '@nestjs/common';
-import { QueryResult } from 'pg';
-import { DatabaseService } from '@/database/database.service';
 import { BaseRepository } from '@/common/modules/base/base.repository';
 import { type IPermission } from '@/modules/auth/types/auth';
 
 @Injectable()
 export class PermissionsRepository extends BaseRepository {
-  constructor(private readonly db: DatabaseService) {
-    super();
-  }
-
   async findByUserAndOrgId(
     userId: string,
     orgId: string,
   ): Promise<IPermission[]> {
     try {
-      const result: QueryResult<IPermission> = await this.db.query(
-        `
-          SELECT DISTINCT p.resource, p.action
-          FROM user_organizations uo
-          INNER JOIN roles r ON uo.role_id = r.id
-          INNER JOIN role_permissions rp ON r.id = rp.role_id  
-          INNER JOIN permissions p ON rp.permission_id = p.id
-          WHERE uo.user_id = $1 AND uo.organization_id = $2
-        `,
-        [userId, orgId],
-      );
+      const result = await this.db
+        .selectFrom('user_organizations as uo')
+        .innerJoin('roles as r', 'uo.role_id', 'r.id')
+        .innerJoin('role_permissions as rp', 'r.id', 'rp.role_id')
+        .innerJoin('permissions as p', 'rp.permission_id', 'p.id')
+        .select(['p.resource', 'p.action'])
+        .where('uo.user_id', '=', userId)
+        .where('uo.organization_id', '=', orgId)
+        .distinct()
+        .execute();
 
-      return result.rows;
+      return result;
     } catch (error) {
       this.handleDatabaseError(error);
     }

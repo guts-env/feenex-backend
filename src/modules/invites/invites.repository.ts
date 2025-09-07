@@ -1,32 +1,85 @@
-import { QueryResult } from 'pg';
 import { BaseRepository } from '@/common/modules/base/base.repository';
-import { DatabaseService } from '@/database/database.service';
 import CreateInviteDto from '@/modules/invites/dto/create-invite.dto';
 import { type IRepositoryInvite } from '@/modules/invites/types/invites';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class InvitesRepository extends BaseRepository {
-  constructor(private readonly db: DatabaseService) {
-    super();
+  private get baseQuery() {
+    return this.db
+      .selectFrom('invites as i')
+      .innerJoin('users as u', 'i.created_by', 'u.id')
+      .innerJoin('users as u2', 'i.updated_by', 'u2.id')
+      .select([
+        'i.id',
+        'i.email',
+        'i.organization_id',
+        'i.role_id',
+        'i.expires_at',
+        'i.token',
+        'i.used',
+        'i.used_at',
+        'i.created_at',
+        'i.updated_at',
+        'u.id as created_by',
+        'u.email as created_by_email',
+        'u2.id as updated_by',
+        'u2.email as updated_by_email',
+      ]);
   }
 
-  async findByEmail(email: string): Promise<IRepositoryInvite | null> {
-    const result: QueryResult<IRepositoryInvite> = await this.db.query(
-      `SELECT * FROM invites WHERE email = $1`,
-      [email],
-    );
+  async findByEmail(email: string): Promise<IRepositoryInvite | undefined> {
+    try {
+      const result = await this.baseQuery
+        .where('email', '=', email)
+        .executeTakeFirst();
 
-    return result.rows[0] || null;
+      const transformedResult = result
+        ? {
+            ...result,
+            created_by: {
+              id: result.created_by,
+              email: result.created_by_email,
+            },
+            updated_by: {
+              id: result.updated_by,
+              email: '',
+            },
+          }
+        : undefined;
+
+      return transformedResult;
+    } catch (error) {
+      this.handleDatabaseError(error);
+    }
   }
 
-  async findByToken(token: string): Promise<IRepositoryInvite | null> {
-    const result: QueryResult<IRepositoryInvite> = await this.db.query(
-      `SELECT * FROM invites WHERE token = $1`,
-      [token],
-    );
+  async findByToken(token: string): Promise<IRepositoryInvite | undefined> {
+    try {
+      const result = await this.db
+        .selectFrom('invites')
+        .selectAll()
+        .where('token', '=', token)
+        .executeTakeFirst();
 
-    return result.rows[0] || null;
+      const transformedResult = result
+        ? {
+            ...result,
+            created_by: {
+              id: result.created_by,
+              email: '',
+            },
+            updated_by: {
+              id: result.updated_by,
+              email: '',
+            },
+          }
+        : undefined;
+
+      return transformedResult;
+    } catch (error) {
+      this.handleDatabaseError(error);
+    }
   }
 
   async createInvite(
@@ -34,20 +87,20 @@ export class InvitesRepository extends BaseRepository {
     userId: string,
     dto: CreateInviteDto,
     token: string,
-  ): Promise<IRepositoryInvite> {
+  ): Promise<void> {
     const { email } = dto;
 
     try {
-      const result: QueryResult<IRepositoryInvite> = await this.db.query(
-        `
-          INSERT INTO invites (organization_id, email, created_by, updated_by, token) 
-          VALUES ($1, $2, $3, $3, $4)
-          RETURNING *
-        `,
-        [orgId, email, userId, token],
-      );
-
-      return result.rows[0];
+      await this.db
+        .insertInto('invites')
+        .values({
+          organization_id: orgId,
+          email,
+          created_by: userId,
+          updated_by: userId,
+          token,
+        })
+        .executeTakeFirstOrThrow();
     } catch (error: any) {
       this.handleDatabaseError(error);
     }

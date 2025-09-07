@@ -1,32 +1,131 @@
 import { Injectable } from '@nestjs/common';
-import { QueryResult } from 'pg';
 import { BaseRepository } from '@/common/modules/base/base.repository';
-import { DatabaseService } from '@/database/database.service';
-import {
-  CreateExpenseDto,
-  IExpenseValue,
-} from '@/modules/expenses/dto/create-expense.dto';
+import { CreateExpenseDto } from '@/modules/expenses/dto/create-expense.dto';
 import UpdateExpenseDto from '@/modules/expenses/dto/update-expense.dto';
-import GetExpensesDto, {
-  GetExpensesDtoValues,
-} from '@/modules/expenses/dto/get-expenses.dto';
+import GetExpensesDto from '@/modules/expenses/dto/get-expenses.dto';
 import {
-  ExpenseStatusEnum,
-  CurrencyCodeEnum,
-  SortOrderEnum,
-} from '@/common/constants/enums';
-import { type IRepositoryExpense } from '@/modules/expenses/types/expenses';
+  type IExpenseItem,
+  type IExpenseOtherDetails,
+  type IBaseRepositoryExpense,
+  IExpenseQueryResult,
+} from '@/modules/expenses/types/expenses';
+import {
+  type Categories,
+  type DB,
+  type Users,
+  type CurrencyCode,
+  type Expenses,
+} from '@/database/types/db';
+import { SelectQueryBuilder } from 'kysely';
 
 @Injectable()
 export class ExpensesRepository extends BaseRepository {
-  constructor(private readonly db: DatabaseService) {
-    super();
+  private addExpenseSelections(
+    query: SelectQueryBuilder<
+      DB & {
+        e: Expenses;
+        c: Categories;
+        u: Users;
+        u2: Users;
+        u3: Users;
+      },
+      'e' | 'c' | 'u' | 'u2' | 'u3',
+      object
+    >,
+  ) {
+    return query.select([
+      'e.id',
+      'e.amount',
+      'e.items',
+      'e.other_details',
+      'e.source',
+      'e.status',
+      'e.merchant_name',
+      'e.currency',
+      'e.date',
+      'e.description',
+      'e.photos',
+      'e.created_at',
+      'e.updated_at',
+      'c.id as category_id',
+      'c.name as category_name',
+      'u.id as created_by',
+      'u.email as created_by_email',
+      'u2.id as updated_by',
+      'u2.email as updated_by_email',
+      'u3.id as verified_by',
+      'u3.email as verified_by_email',
+    ]);
+  }
+
+  private get baseQuery() {
+    return this.addExpenseSelections(
+      this.db
+        .selectFrom('expenses as e')
+        .innerJoin('categories as c', 'e.category_id', 'c.id')
+        .innerJoin('users as u', 'e.created_by', 'u.id')
+        .innerJoin('users as u2', 'e.updated_by', 'u2.id')
+        .innerJoin('users as u3', 'e.verified_by', 'u3.id')
+        .select([
+          'e.id',
+          'e.amount',
+          'e.items',
+          'e.other_details',
+          'e.source',
+          'e.status',
+          'e.merchant_name',
+          'e.currency',
+          'e.date',
+          'e.description',
+          'e.photos',
+          'e.created_at',
+          'e.updated_at',
+          'c.id as category_id',
+          'c.name as category_name',
+          'u.id as created_by',
+          'u.email as created_by_email',
+          'u2.id as updated_by',
+          'u2.email as updated_by_email',
+          'u3.id as verified_by',
+          'u3.email as verified_by_email',
+        ]),
+    );
+  }
+
+  private transformExpenseRow(
+    row: IExpenseQueryResult,
+  ): IBaseRepositoryExpense {
+    return {
+      ...row,
+      category: {
+        id: row.category_id,
+        name: row.category_name,
+      },
+      items: row.items
+        ? (JSON.parse(row.items as string) as IExpenseItem[])
+        : null,
+      other_details: row.other_details
+        ? (JSON.parse(row.other_details as string) as IExpenseOtherDetails[])
+        : null,
+      verified_by: {
+        id: row.verified_by,
+        email: row.verified_by_email,
+      },
+      created_by: {
+        id: row.created_by,
+        email: row.created_by_email,
+      },
+      updated_by: {
+        id: row.updated_by,
+        email: row.updated_by_email,
+      },
+    };
   }
 
   async getExpenses(
     orgId: string,
     query: GetExpensesDto,
-  ): Promise<IRepositoryExpense[]> {
+  ): Promise<{ count: number; data: IBaseRepositoryExpense[] }> {
     const {
       categories,
       createdByUsers,
@@ -39,120 +138,108 @@ export class ExpensesRepository extends BaseRepository {
       search,
       offset,
       limit,
-      sortBy,
-      sortOrder,
+      orderBy,
     } = query;
 
-    let conditionIndex = 2;
-    const conditions: string[] = [];
-    const params: GetExpensesDtoValues = [];
-
-    if (categories && categories.length > 0) {
-      const categoryPlaceholders = categories
-        .map(() => `$${conditionIndex++}`)
-        .join(', ');
-      conditions.push(`e.category_id IN (${categoryPlaceholders})`);
-      params.push(...categories);
-    }
-
-    if (createdByUsers && createdByUsers.length > 0) {
-      const userPlaceholders = createdByUsers
-        .map(() => `$${conditionIndex++}`)
-        .join(', ');
-      conditions.push(`e.created_by IN (${userPlaceholders})`);
-      params.push(...createdByUsers);
-    }
-
-    if (verifiedByUsers && verifiedByUsers.length > 0) {
-      const verifierPlaceholders = verifiedByUsers
-        .map(() => `$${conditionIndex++}`)
-        .join(', ');
-      conditions.push(`e.verified_by IN (${verifierPlaceholders})`);
-      params.push(...verifiedByUsers);
-    }
-
-    if (startDate) {
-      conditions.push(`e.date >= $${conditionIndex}`);
-      params.push(startDate);
-      conditionIndex++;
-    }
-
-    if (endDate) {
-      conditions.push(`e.date <= $${conditionIndex}`);
-      params.push(endDate);
-      conditionIndex++;
-    }
-
-    if (minAmount) {
-      conditions.push(`e.amount >= $${conditionIndex}`);
-      params.push(minAmount);
-      conditionIndex++;
-    }
-
-    if (maxAmount) {
-      conditions.push(`e.amount <= $${conditionIndex}`);
-      params.push(maxAmount);
-      conditionIndex++;
-    }
-
-    if (status) {
-      const statusPlaceholders = status
-        .map(() => `$${conditionIndex++}`)
-        .join(', ');
-      conditions.push(`e.status IN (${statusPlaceholders})`);
-      params.push(...status);
-    }
-
-    if (search) {
-      conditions.push(
-        `(e.merchant_name ILIKE $${conditionIndex} OR e.description ILIKE $${conditionIndex})`,
-      );
-      params.push(`%${search}%`);
-      conditionIndex++;
-    }
-
-    let queryStatement =
-      conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-
-    if (sortBy) {
-      /* TODO: replace with proper sorting logic */
-      queryStatement += `ORDER BY e.created_at `;
-    } else {
-      queryStatement += `ORDER BY e.created_at `;
-    }
-
-    if (sortOrder) {
-      queryStatement += `$${sortOrder} `;
-      params.push(sortOrder);
-      conditionIndex++;
-    } else {
-      queryStatement += `${SortOrderEnum.DESC} `;
-    }
-
-    if (offset) {
-      queryStatement += `OFFSET $${conditionIndex} `;
-      params.push(offset);
-      conditionIndex++;
-    }
-
-    if (limit) {
-      queryStatement += `LIMIT $${conditionIndex}`;
-      params.push(limit);
-    }
-
     try {
-      const result: QueryResult<IRepositoryExpense> =
-        await this.db.isolatedQuery(
-          `
-            SELECT e.*
-            FROM expenses e
-            ${queryStatement}
-          `,
-          [...params],
-          orgId,
-        );
+      let expensesBaseQuery = this.db
+        .selectFrom('expenses as e')
+        .innerJoin('categories as c', 'e.category_id', 'c.id')
+        .innerJoin('users as u', 'e.created_by', 'u.id')
+        .innerJoin('users as u2', 'e.updated_by', 'u2.id')
+        .innerJoin('users as u3', 'e.verified_by', 'u3.id')
+        .where('e.organization_id', '=', orgId);
 
-      return result.rows;
+      if (categories && categories.length > 0) {
+        expensesBaseQuery = expensesBaseQuery.where(
+          'e.category_id',
+          'in',
+          categories,
+        );
+      }
+
+      if (createdByUsers && createdByUsers.length > 0) {
+        expensesBaseQuery = expensesBaseQuery.where(
+          'e.created_by',
+          'in',
+          createdByUsers,
+        );
+      }
+
+      if (verifiedByUsers && verifiedByUsers.length > 0) {
+        expensesBaseQuery = expensesBaseQuery.where(
+          'e.verified_by',
+          'in',
+          verifiedByUsers,
+        );
+      }
+
+      if (startDate) {
+        expensesBaseQuery = expensesBaseQuery.where('e.date', '>=', startDate);
+      }
+
+      if (endDate) {
+        expensesBaseQuery = expensesBaseQuery.where('e.date', '<=', endDate);
+      }
+
+      if (minAmount) {
+        expensesBaseQuery = expensesBaseQuery.where(
+          'e.amount',
+          '>=',
+          minAmount,
+        );
+      }
+
+      if (maxAmount) {
+        expensesBaseQuery = expensesBaseQuery.where(
+          'e.amount',
+          '<=',
+          maxAmount,
+        );
+      }
+
+      if (status && status.length > 0) {
+        expensesBaseQuery = expensesBaseQuery.where('e.status', 'in', status);
+      }
+
+      if (search) {
+        expensesBaseQuery = expensesBaseQuery.where((eb) =>
+          eb.or([
+            eb('e.merchant_name', 'ilike', `%${search}%`),
+            eb('e.description', 'ilike', `%${search}%`),
+          ]),
+        );
+      }
+
+      let dbQuery = this.addExpenseSelections(expensesBaseQuery);
+      const countQuery = expensesBaseQuery.select(({ fn }) => [
+        fn.countAll().as('count'),
+      ]);
+
+      if (orderBy) {
+        dbQuery = dbQuery.orderBy(`e.${orderBy.field}`, orderBy.order);
+      } else {
+        dbQuery = dbQuery.orderBy('e.created_at', 'desc');
+      }
+
+      if (offset !== undefined) {
+        dbQuery = dbQuery.offset(offset);
+      }
+      if (limit !== undefined) {
+        dbQuery = dbQuery.limit(limit);
+      }
+
+      const [rows, countResult] = await Promise.all([
+        dbQuery.execute(),
+        countQuery.executeTakeFirst(),
+      ]);
+
+      const count = countResult ? Number(countResult.count) : 0;
+
+      return {
+        count,
+        data: rows.map((item) => this.transformExpenseRow(item)),
+      };
     } catch (error: any) {
       this.handleDatabaseError(error);
     }
@@ -175,53 +262,31 @@ export class ExpensesRepository extends BaseRepository {
     } = dto;
 
     try {
-      await this.db.query(
-        `
-        INSERT INTO expenses (
-          organization_id,
-          user_id,
-          category_id,
-          merchant_name,
+      const createdExpense = await this.db
+        .insertInto('expenses')
+        .values({
+          organization_id: orgId,
+          user_id: userId,
+          category_id: categoryId,
+          merchant_name: merchantName,
           amount,
-          currency,
+          currency: (currency as CurrencyCode) || 'PHP',
           date,
-          description,
-          items,
-          other_details,
+          description: description || null,
+          items: items ? JSON.stringify(items) : null,
+          other_details: otherDetails ? JSON.stringify(otherDetails) : null,
           source,
-          status,
-          photos,
-          ocr_result_id,
-          llm_result_id,
-          created_by,
-          updated_by
-        ) 
-        VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
-          $11, $12, $13, $14, $15, $16, $17
-        ) 
-        RETURNING *
-      `,
-        [
-          orgId, // $1
-          userId, // $2
-          categoryId, // $3
-          merchantName, // $4
-          amount, // $5
-          currency || CurrencyCodeEnum.PHP, // $6
-          date, // $7
-          description || null, // $8
-          items ? JSON.stringify(items) : null, // $9
-          otherDetails ? JSON.stringify(otherDetails) : null, // $10
-          source, // $11
-          ExpenseStatusEnum.PENDING, // $12
-          photos || null, // $13
-          ocrResultId || null, // $14
-          llmResultId || null, // $15
-          userId, // $16
-          userId, // $17
-        ],
-      );
+          status: 'pending',
+          photos: photos || null,
+          ocr_result_id: ocrResultId || null,
+          llm_result_id: llmResultId || null,
+          created_by: userId,
+          updated_by: userId,
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+
+      return createdExpense;
     } catch (error) {
       this.handleDatabaseError(error);
     }
@@ -232,7 +297,7 @@ export class ExpensesRepository extends BaseRepository {
     userId: string,
     orgId: string,
     dto: UpdateExpenseDto,
-  ): Promise<IRepositoryExpense | null> {
+  ): Promise<IBaseRepositoryExpense> {
     const {
       categoryId,
       merchantName,
@@ -244,84 +309,54 @@ export class ExpensesRepository extends BaseRepository {
       photos,
     } = dto;
 
+    const updateObj = {};
+
+    if (categoryId !== undefined) updateObj['category_id'] = categoryId;
+    if (merchantName !== undefined) updateObj['merchant_name'] = merchantName;
+    if (amount !== undefined) updateObj['amount'] = amount;
+    if (date !== undefined) updateObj['date'] = date;
+    if (description !== undefined) updateObj['description'] = description;
+    if (items !== undefined) updateObj['items'] = items;
+    if (otherDetails !== undefined) updateObj['other_details'] = otherDetails;
+    if (photos !== undefined) updateObj['photos'] = photos;
+
+    updateObj['updated_by'] = userId;
+    updateObj['updated_at'] = new Date();
+
     try {
-      const fields: Map<keyof IRepositoryExpense, IExpenseValue> = new Map();
+      const updatedExpense = await this.db
+        .updateTable('expenses')
+        .set(updateObj)
+        .where('id', '=', id)
+        .where('organization_id', '=', orgId)
+        .returningAll()
+        .executeTakeFirstOrThrow();
 
-      if (categoryId !== undefined) {
-        fields.set('category_id', categoryId);
-      }
+      const result = await this.addExpenseSelections(
+        this.db
+          .selectFrom('expenses as e')
+          .innerJoin('categories as c', 'e.category_id', 'c.id')
+          .innerJoin('users as u', 'e.created_by', 'u.id')
+          .innerJoin('users as u2', 'e.updated_by', 'u2.id')
+          .innerJoin('users as u3', 'e.verified_by', 'u3.id'),
+      )
+        .where('e.id', '=', updatedExpense.id)
+        .executeTakeFirstOrThrow();
 
-      if (merchantName !== undefined) {
-        fields.set('merchant_name', merchantName);
-      }
-
-      if (amount !== undefined) {
-        fields.set('amount', amount);
-      }
-
-      if (date !== undefined) {
-        fields.set('date', date);
-      }
-
-      if (description !== undefined) {
-        fields.set('description', description);
-      }
-
-      if (items !== undefined) {
-        fields.set('items', items);
-      }
-
-      if (otherDetails !== undefined) {
-        fields.set('other_details', otherDetails);
-      }
-
-      if (photos !== undefined) {
-        fields.set('photos', photos);
-      }
-
-      fields.set('updated_by', userId);
-      fields.set('updated_at', new Date().toISOString());
-
-      const fieldNames = Array.from(fields.keys());
-      const fieldValues = Array.from(fields.values());
-
-      const setClause = fieldNames
-        .map((field, index) => `${field} = $${index + 1}`)
-        .join(', ');
-
-      const idParamIndex = fieldValues.length + 1;
-
-      const result: QueryResult<IRepositoryExpense> =
-        await this.db.isolatedQuery(
-          `
-          UPDATE expenses 
-          SET ${setClause}
-          WHERE id = $${idParamIndex}
-          RETURNING *
-        `,
-          [id],
-          orgId,
-        );
-
-      return result.rows[0];
+      return this.transformExpenseRow(result);
     } catch (error) {
       this.handleDatabaseError(error);
     }
   }
 
-  async findById(
-    id: string,
-    orgId: string,
-  ): Promise<IRepositoryExpense | null> {
+  async findById(id: string, orgId: string): Promise<IBaseRepositoryExpense> {
     try {
-      const result: QueryResult<IRepositoryExpense> =
-        await this.db.isolatedQuery(
-          `SELECT * FROM expenses WHERE id = $1`,
-          [id],
-          orgId,
-        );
+      const result = await this.baseQuery
+        .where('e.id', '=', id)
+        .where('e.organization_id', '=', orgId)
+        .executeTakeFirstOrThrow();
 
-      return result.rows[0] || null;
+      return this.transformExpenseRow(result);
     } catch (error) {
       this.handleDatabaseError(error);
     }
@@ -329,11 +364,20 @@ export class ExpensesRepository extends BaseRepository {
 
   async verify(id: string, userId: string, orgId: string) {
     try {
-      await this.db.isolatedQuery(
-        `UPDATE expenses SET status = $1, verified_by = $2 WHERE id = $3`,
-        [ExpenseStatusEnum.VERIFIED, userId, id],
-        orgId,
-      );
+      const verifiedExpense = await this.db
+        .updateTable('expenses')
+        .set({
+          status: 'verified',
+          verified_by: userId,
+          updated_by: userId,
+          updated_at: new Date(),
+        })
+        .where('id', '=', id)
+        .where('organization_id', '=', orgId)
+        .returningAll()
+        .executeTakeFirstOrThrow();
+
+      return verifiedExpense;
     } catch (error) {
       this.handleDatabaseError(error);
     }
@@ -341,11 +385,11 @@ export class ExpensesRepository extends BaseRepository {
 
   async delete(id: string, orgId: string) {
     try {
-      await this.db.isolatedQuery(
-        `DELETE FROM expenses WHERE id = $1`,
-        [id],
-        orgId,
-      );
+      await this.db
+        .deleteFrom('expenses')
+        .where('id', '=', id)
+        .where('organization_id', '=', orgId)
+        .execute();
     } catch (error) {
       this.handleDatabaseError(error);
     }

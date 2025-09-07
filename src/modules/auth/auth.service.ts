@@ -15,7 +15,6 @@ import { AuthRepository } from '@/modules/auth/auth.repository';
 import UserRegisterDto from '@/modules/auth/dto/user-register.dto';
 import RegisterInvitedUserDto from '@/modules/auth/dto/accept-invite.dto';
 import { UserLoginResDto } from '@/modules/auth/dto/user-login-res.dto';
-import { AccountTypeEnum } from '@/common/constants/enums';
 import {
   type IUserPassport,
   type IValidateUserInput,
@@ -34,7 +33,7 @@ export class AuthService {
   ) {}
 
   async register(dto: UserRegisterDto): Promise<void> {
-    const { email, password, accountType, organizationName } = dto;
+    const { email, password, orgType, organizationName } = dto;
 
     const existingUser = await this.userService.findByEmail(email, true);
     if (existingUser) {
@@ -43,7 +42,7 @@ export class AuthService {
       });
     }
 
-    if (accountType === AccountTypeEnum.BUSINESS && !organizationName) {
+    if (orgType === 'business' && !organizationName) {
       throw new BadRequestException({
         message: 'Business name is required.',
       });
@@ -52,9 +51,7 @@ export class AuthService {
     const personalOrgName = email.split('@')[0];
 
     const businessName =
-      accountType === AccountTypeEnum.BUSINESS
-        ? organizationName
-        : personalOrgName;
+      orgType === 'business' ? organizationName : personalOrgName;
 
     const hashedPassword = await this.passwordService.hash(password);
 
@@ -62,7 +59,7 @@ export class AuthService {
       email,
       hashedPassword,
       organizationName: businessName,
-      accountType,
+      orgType,
     };
 
     await this.authRepository.create(registrationPayload);
@@ -119,7 +116,7 @@ export class AuthService {
       email,
       hashedPassword,
       orgId: invite.organization_id,
-      accountType: AccountTypeEnum.BUSINESS,
+      orgType: organization.type,
     };
 
     await this.authRepository.createInvitedUser(registrationPayload, invite.id);

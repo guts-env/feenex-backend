@@ -53,32 +53,34 @@ export type ProcessingStatus =
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
+export type UserRole = 'business_admin' | 'member' | 'personal_admin';
+
 export interface Auth {
-  created_at: Generated<Timestamp | null>;
+  created_at: Generated<Timestamp>;
   id: Generated<string>;
   password: string;
-  updated_at: Generated<Timestamp | null>;
+  updated_at: Generated<Timestamp>;
   user_id: string;
 }
 
 export interface Categories {
-  created_at: Generated<Timestamp | null>;
+  created_at: Generated<Timestamp>;
   created_by: string | null;
   description: string | null;
   id: Generated<string>;
-  is_default: Generated<boolean | null>;
+  is_default: Generated<boolean>;
   name: string;
   organization_id: string | null;
-  updated_at: Generated<Timestamp | null>;
+  updated_at: Generated<Timestamp>;
   updated_by: string | null;
 }
 
 export interface Expenses {
   amount: Numeric;
   category_id: string;
-  created_at: Generated<Timestamp | null>;
+  created_at: Generated<Timestamp>;
   created_by: string;
-  currency: Generated<CurrencyCode | null>;
+  currency: Generated<CurrencyCode>;
   date: Timestamp;
   description: string | null;
   id: Generated<string>;
@@ -91,8 +93,8 @@ export interface Expenses {
   other_details: Json | null;
   photos: string[] | null;
   source: ExpenseSource;
-  status: Generated<ExpenseStatus | null>;
-  updated_at: Generated<Timestamp | null>;
+  status: Generated<ExpenseStatus>;
+  updated_at: Generated<Timestamp>;
   updated_by: string;
   user_id: string;
   verified_by: string | null;
@@ -100,15 +102,15 @@ export interface Expenses {
 
 export interface Imports {
   completed_at: Timestamp | null;
-  created_at: Generated<Timestamp | null>;
+  created_at: Generated<Timestamp>;
   error_details: Json | null;
-  failed_rows: Generated<number | null>;
+  failed_rows: Generated<number>;
   file: string;
   id: Generated<string>;
   organization_id: string;
-  processed_rows: Generated<number | null>;
-  status: Generated<ProcessingStatus | null>;
-  successful_rows: Generated<number | null>;
+  processed_rows: Generated<number>;
+  status: Generated<ProcessingStatus>;
+  successful_rows: Generated<number>;
   total_rows: number | null;
   user_id: string;
 }
@@ -119,7 +121,7 @@ export interface Invites {
   email: string;
   expires_at: Generated<Timestamp>;
   id: Generated<string>;
-  organization_id: string | null;
+  organization_id: string;
   role_id: string | null;
   token: string;
   updated_at: Generated<Timestamp>;
@@ -129,27 +131,27 @@ export interface Invites {
 }
 
 export interface LlmResults {
-  created_at: Generated<Timestamp | null>;
+  created_at: Generated<Timestamp>;
   error_message: string | null;
   extracted_data: Json | null;
   id: Generated<string>;
   ocr_result_id: string;
   processing_time_ms: number | null;
-  status: Generated<ProcessingStatus | null>;
-  updated_at: Generated<Timestamp | null>;
+  status: Generated<ProcessingStatus>;
+  updated_at: Generated<Timestamp>;
 }
 
 export interface Merchants {
-  created_at: Generated<Timestamp | null>;
+  created_at: Generated<Timestamp>;
   id: Generated<string>;
   name: string;
   normalized_name: string | null;
-  updated_at: Generated<Timestamp | null>;
+  updated_at: Generated<Timestamp>;
 }
 
 export interface OcrResults {
   confidence_score: Numeric | null;
-  created_at: Generated<Timestamp | null>;
+  created_at: Generated<Timestamp>;
   entities: Json | null;
   error_message: string | null;
   id: Generated<string>;
@@ -157,64 +159,64 @@ export interface OcrResults {
   ocr_text: string | null;
   organization_id: string;
   processing_time_ms: number | null;
-  status: Generated<ProcessingStatus | null>;
-  updated_at: Generated<Timestamp | null>;
+  status: Generated<ProcessingStatus>;
+  updated_at: Generated<Timestamp>;
   user_id: string;
 }
 
 export interface Organizations {
-  created_at: Generated<Timestamp | null>;
+  created_at: Generated<Timestamp>;
   created_by: string;
   id: Generated<string>;
   name: string;
   type: Generated<OrganizationType>;
-  updated_at: Generated<Timestamp | null>;
+  updated_at: Generated<Timestamp>;
   updated_by: string;
 }
 
 export interface Permissions {
   action: PermissionAction;
-  created_at: Generated<Timestamp | null>;
+  created_at: Generated<Timestamp>;
   description: string | null;
   id: Generated<string>;
   name: string;
   resource: PermissionResource;
-  updated_at: Generated<Timestamp | null>;
+  updated_at: Generated<Timestamp>;
 }
 
 export interface RolePermissions {
-  created_at: Generated<Timestamp | null>;
+  created_at: Generated<Timestamp>;
   id: Generated<string>;
   permission_id: string;
   role_id: string;
-  updated_at: Generated<Timestamp | null>;
+  updated_at: Generated<Timestamp>;
 }
 
 export interface Roles {
-  created_at: Generated<Timestamp | null>;
+  created_at: Generated<Timestamp>;
   description: string | null;
   id: Generated<string>;
-  name: string;
-  updated_at: Generated<Timestamp | null>;
+  name: UserRole;
+  updated_at: Generated<Timestamp>;
 }
 
 export interface UserOrganizations {
-  created_at: Generated<Timestamp | null>;
+  created_at: Generated<Timestamp>;
   id: Generated<string>;
   organization_id: string;
   role_id: string;
-  updated_at: Generated<Timestamp | null>;
+  updated_at: Generated<Timestamp>;
   user_id: string;
 }
 
 export interface Users {
-  created_at: Generated<Timestamp | null>;
+  created_at: Generated<Timestamp>;
   email: string;
   first_name: string | null;
   id: Generated<string>;
   last_name: string | null;
   middle_name: string | null;
-  updated_at: Generated<Timestamp | null>;
+  updated_at: Generated<Timestamp>;
 }
 
 export interface DB {

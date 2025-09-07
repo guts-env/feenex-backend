@@ -1,7 +1,7 @@
 import {
   ArrayNotEmpty,
   IsDateString,
-  IsEnum,
+  IsIn,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -10,7 +10,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { CurrencyCodeEnum, ExpenseSourceEnum } from '@/common/constants/enums';
+import { type ExpenseSource, type CurrencyCode } from '@/database/types/db';
 
 export class ExpenseItemDto {
   @IsNotEmpty()
@@ -59,8 +59,8 @@ export type IExpenseValues = IExpenseValue[];
 
 export class CreateExpenseDto extends BaseExpenseDto {
   @IsNotEmpty()
-  @IsEnum(ExpenseSourceEnum)
-  source!: ExpenseSourceEnum;
+  @IsIn(['api', 'import', 'manual', 'ocr'])
+  source!: ExpenseSource;
 
   @IsNotEmpty()
   @IsUUID('4')
@@ -84,8 +84,8 @@ export class CreateExpenseDto extends BaseExpenseDto {
   photos?: string[];
 
   @IsOptional()
-  @IsEnum(CurrencyCodeEnum)
-  currency?: CurrencyCodeEnum;
+  @IsIn(['PHP', 'USD', 'HKD', 'THB', 'VND'])
+  currency?: CurrencyCode;
 
   @IsOptional()
   @IsUUID('4')

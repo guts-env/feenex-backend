@@ -1,26 +1,8 @@
-import { AccountTypeEnum } from '@/common/constants/enums';
 import { Expose, Type } from 'class-transformer';
+import RoleResDto from '@/modules/roles/dto/base-role-res.dto';
+import UserOrganizationResDto from '@/common/modules/user-organization/dto/base-user-org-res.dto';
 
-class UserRoleDto {
-  @Expose()
-  id!: string;
-
-  @Expose()
-  name!: string;
-}
-
-class UserOrganizationDto {
-  @Expose()
-  id!: string;
-
-  @Expose()
-  name!: string;
-
-  @Expose()
-  type!: AccountTypeEnum;
-}
-
-class UserDto {
+class UserLoginDto {
   @Expose()
   sub!: string;
 
@@ -28,12 +10,12 @@ class UserDto {
   email!: string;
 
   @Expose()
-  @Type(() => UserRoleDto)
-  role!: UserRoleDto;
+  @Type(() => RoleResDto)
+  role!: RoleResDto;
 
   @Expose()
-  @Type(() => UserOrganizationDto)
-  organization!: UserOrganizationDto;
+  @Type(() => UserOrganizationResDto)
+  organization!: UserOrganizationResDto;
 }
 
 export class UserLoginResDto {
@@ -41,6 +23,6 @@ export class UserLoginResDto {
   accessToken!: string;
 
   @Expose()
-  @Type(() => UserDto)
-  user!: UserDto;
+  @Type(() => UserLoginDto)
+  user!: UserLoginDto;
 }

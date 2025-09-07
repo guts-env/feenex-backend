@@ -1,12 +1,12 @@
-import { IsEnum, IsNotEmpty, IsUUID } from 'class-validator';
-import { UserRoleEnum } from '@/common/constants/enums';
+import { IsIn, IsNotEmpty, IsUUID } from 'class-validator';
+import { type UserRole } from '@/database/types/db';
 
 export default class UpdateMemberRoleDto {
   @IsUUID('4')
   @IsNotEmpty()
   userId!: string;
 
-  @IsEnum(UserRoleEnum)
+  @IsIn(['personal_admin', 'business_admin', 'member'])
   @IsNotEmpty()
-  role!: UserRoleEnum;
+  role!: UserRole;
 }

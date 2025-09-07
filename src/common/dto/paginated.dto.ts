@@ -1,6 +1,24 @@
-import { IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsIn,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MaxLength,
+  ValidateNested,
+} from 'class-validator';
 
-export default class PaginatedDto {
+class OrderByDto<T> {
+  @IsString()
+  @MaxLength(50, { message: 'Order by field must be less than 50 characters' })
+  field!: keyof T;
+
+  @IsIn(['asc', 'desc'])
+  @Transform(({ value }: { value: string }) => value || 'desc')
+  order!: 'asc' | 'desc';
+}
+
+export default class PaginatedDto<T> {
   @IsOptional()
   @IsNumber()
   offset?: number;
@@ -15,12 +33,7 @@ export default class PaginatedDto {
   search?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(50, { message: 'Sort order must be less than 50 characters' })
-  sortOrder?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(50, { message: 'Sort by must be less than 50 characters' })
-  sortBy?: string;
+  @ValidateNested({ each: true })
+  @Type(() => OrderByDto<T>)
+  orderBy?: OrderByDto<T>;
 }

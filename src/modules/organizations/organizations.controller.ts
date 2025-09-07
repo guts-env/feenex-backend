@@ -23,6 +23,7 @@ import UpdateOrganizationDto from '@/modules/organizations/dto/update-organizati
 import GetMembersDto from '@/modules/organizations/dto/get-members.dto';
 import RemoveMemberDto from '@/modules/organizations/dto/remove-member.dto';
 import UpdateMemberRoleDto from '@/modules/organizations/dto/update-member-role.dto';
+import GetMembersResDto from '@/modules/organizations/dto/get-members-res.dto';
 import { type IAuthenticatedRequest } from '@/modules/auth/types/auth';
 
 @AllRoles()
@@ -36,7 +37,7 @@ export class OrganizationsController {
   getMembers(
     @Request() req: IAuthenticatedRequest,
     @Query() query: GetMembersDto,
-  ) {
+  ): Promise<GetMembersResDto> {
     return this.organizationsService.getMembers(
       req.user.sub,
       req.user.organization.id,
@@ -74,10 +75,4 @@ export class OrganizationsController {
   updateMemberRole(@Body() dto: UpdateMemberRoleDto) {
     return this.organizationsService.updateMemberRole(dto);
   }
-
-  // @BusinessOnly()
-  // @Post()
-  // async inviteMember(@Body() dto: InviteMemberDto) {
-  //   return this.organizationsService.inviteMember(dto);
-  // }
 }

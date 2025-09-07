@@ -18,11 +18,11 @@ export class InvitesService {
     private readonly emailService: EmailService,
   ) {}
 
-  async findByEmail(email: string): Promise<IRepositoryInvite | null> {
+  async findByEmail(email: string): Promise<IRepositoryInvite | undefined> {
     return this.invitesRepository.findByEmail(email);
   }
 
-  async findByToken(token: string): Promise<IRepositoryInvite | null> {
+  async findByToken(token: string): Promise<IRepositoryInvite | undefined> {
     const hashedToken = this.hashToken(token);
     return this.invitesRepository.findByToken(hashedToken);
   }

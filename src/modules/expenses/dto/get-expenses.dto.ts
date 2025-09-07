@@ -2,7 +2,7 @@ import {
   ArrayNotEmpty,
   IsDateString,
   IsDecimal,
-  IsEnum,
+  IsIn,
   IsOptional,
   IsString,
   IsUUID,
@@ -10,9 +10,9 @@ import {
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import PaginatedDto from '@/common/dto/paginated.dto';
-import { ExpenseStatusEnum } from '@/common/constants/enums';
+import { Expenses, ExpenseStatus } from '@/database/types/db';
 
-export default class GetExpensesDto extends PaginatedDto {
+export default class GetExpensesDto extends PaginatedDto<Expenses> {
   @IsOptional()
   @ArrayNotEmpty()
   @IsUUID('4', { each: true })
@@ -52,14 +52,11 @@ export default class GetExpensesDto extends PaginatedDto {
 
   @IsOptional()
   @ArrayNotEmpty()
-  @IsEnum(ExpenseStatusEnum, { each: true })
-  status?: ExpenseStatusEnum[];
+  @IsIn(['draft', 'pending', 'rejected', 'verified'], { each: true })
+  status?: ExpenseStatus[];
 
   @IsOptional()
   @IsString()
   @MaxLength(50, { message: 'Merchant name must be less than 50 characters' })
   merchantName?: string;
 }
-
-export type GetExpensesDtoValue = GetExpensesDto[keyof GetExpensesDto];
-export type GetExpensesDtoValues = GetExpensesDtoValue[];

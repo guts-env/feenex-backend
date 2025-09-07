@@ -5,6 +5,9 @@ export async function up(db: Kysely<any>): Promise<void> {
   await sql`CREATE TYPE organization_type AS ENUM ('personal', 'business')`.execute(
     db,
   );
+  await sql`CREATE TYPE user_role AS ENUM ('personal_admin', 'business_admin', 'member')`.execute(
+    db,
+  );
   await sql`CREATE TYPE permission_resource AS ENUM ('categories', 'users', 'expenses', 'organizations')`.execute(
     db,
   );
@@ -34,8 +37,12 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('first_name', 'varchar(255)')
     .addColumn('middle_name', 'varchar(255)')
     .addColumn('last_name', 'varchar(255)')
-    .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
+    .addColumn('updated_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
     .execute();
 
   // Create auth table
@@ -48,8 +55,12 @@ export async function up(db: Kysely<any>): Promise<void> {
       col.notNull().references('users.id').onDelete('cascade'),
     )
     .addColumn('password', 'varchar(60)', (col) => col.notNull())
-    .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
+    .addColumn('updated_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
     .execute();
 
   // Create organizations table
@@ -62,8 +73,12 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('type', sql`organization_type`, (col) =>
       col.notNull().defaultTo('personal'),
     )
-    .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
+    .addColumn('updated_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
     .addColumn('created_by', 'uuid', (col) =>
       col.notNull().references('users.id').onDelete('cascade'),
     )
@@ -78,10 +93,14 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('id', 'uuid', (col) =>
       col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
-    .addColumn('name', 'varchar(20)', (col) => col.notNull().unique())
+    .addColumn('name', sql`user_role`, (col) => col.notNull().unique())
     .addColumn('description', 'text')
-    .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
+    .addColumn('updated_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
     .execute();
 
   // Create permissions table
@@ -94,8 +113,12 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('description', 'text')
     .addColumn('resource', sql`permission_resource`, (col) => col.notNull())
     .addColumn('action', sql`permission_action`, (col) => col.notNull())
-    .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
+    .addColumn('updated_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
     .execute();
 
   // Create role_permissions table
@@ -110,8 +133,12 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('permission_id', 'uuid', (col) =>
       col.notNull().references('permissions.id').onDelete('cascade'),
     )
-    .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
+    .addColumn('updated_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
     .addUniqueConstraint('unique_role_permission', ['role_id', 'permission_id'])
     .execute();
 
@@ -128,8 +155,12 @@ export async function up(db: Kysely<any>): Promise<void> {
       col.notNull().references('organizations.id').onDelete('cascade'),
     )
     .addColumn('role_id', 'uuid', (col) => col.notNull().references('roles.id'))
-    .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
+    .addColumn('updated_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
     .addUniqueConstraint('unique_user_organization', [
       'user_id',
       'organization_id',
@@ -147,9 +178,13 @@ export async function up(db: Kysely<any>): Promise<void> {
     )
     .addColumn('name', 'varchar(100)', (col) => col.notNull())
     .addColumn('description', 'text')
-    .addColumn('is_default', 'boolean', (col) => col.defaultTo(false))
-    .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
+    .addColumn('is_default', 'boolean', (col) => col.notNull().defaultTo(false))
+    .addColumn('created_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
+    .addColumn('updated_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
     .addColumn('created_by', 'uuid', (col) => col.references('users.id'))
     .addColumn('updated_by', 'uuid', (col) => col.references('users.id'))
     .addUniqueConstraint('unique_org_category_name', [
@@ -180,14 +215,18 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('ocr_text', 'text')
     .addColumn('entities', 'jsonb')
     .addColumn('status', sql`processing_status`, (col) =>
-      col.defaultTo('pending'),
+      col.notNull().defaultTo('pending'),
     )
     .addColumn('confidence_score', sql`decimal(5,2)`)
     .addColumn('error_message', 'text')
     .addColumn('processing_time_ms', 'integer')
     .addColumn('image_path', 'text', (col) => col.notNull())
-    .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
+    .addColumn('updated_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
     .execute();
 
   // Create llm_results table
@@ -201,12 +240,16 @@ export async function up(db: Kysely<any>): Promise<void> {
     )
     .addColumn('extracted_data', 'jsonb')
     .addColumn('status', sql`processing_status`, (col) =>
-      col.defaultTo('pending'),
+      col.notNull().defaultTo('pending'),
     )
     .addColumn('error_message', 'text')
     .addColumn('processing_time_ms', 'integer')
-    .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
+    .addColumn('updated_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
     .execute();
 
   // Create merchants table
@@ -217,8 +260,12 @@ export async function up(db: Kysely<any>): Promise<void> {
     )
     .addColumn('name', 'varchar(200)', (col) => col.notNull())
     .addColumn('normalized_name', 'varchar(200)')
-    .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
+    .addColumn('updated_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
     .execute();
 
   // Create imports table
@@ -235,14 +282,18 @@ export async function up(db: Kysely<any>): Promise<void> {
     )
     .addColumn('file', 'varchar(500)', (col) => col.notNull())
     .addColumn('status', sql`processing_status`, (col) =>
-      col.defaultTo('pending'),
+      col.notNull().defaultTo('pending'),
     )
     .addColumn('total_rows', 'integer')
-    .addColumn('processed_rows', 'integer', (col) => col.defaultTo(0))
-    .addColumn('successful_rows', 'integer', (col) => col.defaultTo(0))
-    .addColumn('failed_rows', 'integer', (col) => col.defaultTo(0))
+    .addColumn('processed_rows', 'integer', (col) => col.notNull().defaultTo(0))
+    .addColumn('successful_rows', 'integer', (col) =>
+      col.notNull().defaultTo(0),
+    )
+    .addColumn('failed_rows', 'integer', (col) => col.notNull().defaultTo(0))
     .addColumn('error_details', 'jsonb')
-    .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
     .addColumn('completed_at', 'timestamptz')
     .execute();
 
@@ -255,16 +306,15 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('organization_id', 'uuid', (col) =>
       col.notNull().references('organizations.id').onDelete('cascade'),
     )
-    .addColumn('user_id', 'uuid', (col) =>
-      col.notNull().references('users.id').onDelete('cascade'),
-    )
     .addColumn('category_id', 'uuid', (col) =>
       col.notNull().references('categories.id'),
     )
     .addColumn('merchant_name', 'varchar(200)', (col) => col.notNull())
     .addColumn('photos', sql`text[]`)
     .addColumn('amount', sql`decimal(5,2)`, (col) => col.notNull())
-    .addColumn('currency', sql`currency_code`, (col) => col.defaultTo('PHP'))
+    .addColumn('currency', sql`currency_code`, (col) =>
+      col.notNull().defaultTo('PHP'),
+    )
     .addColumn('date', 'date', (col) => col.notNull())
     .addColumn('description', 'text')
     .addColumn('items', 'jsonb')
@@ -276,13 +326,19 @@ export async function up(db: Kysely<any>): Promise<void> {
       col.references('llm_results.id'),
     )
     .addColumn('source', sql`expense_source`, (col) => col.notNull())
-    .addColumn('status', sql`expense_status`, (col) => col.defaultTo('pending'))
+    .addColumn('status', sql`expense_status`, (col) =>
+      col.notNull().defaultTo('pending'),
+    )
     .addColumn('verified_by', 'uuid', (col) => col.references('users.id'))
     .addColumn('import_id', 'uuid', (col) => col.references('imports.id'))
-    .addColumn('created_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamptz', (col) => col.defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
+    .addColumn('updated_at', 'timestamptz', (col) =>
+      col.notNull().defaultTo(sql`now()`),
+    )
     .addColumn('created_by', 'uuid', (col) =>
-      col.notNull().references('users.id'),
+      col.notNull().references('users.id').onDelete('set null'),
     )
     .addColumn('updated_by', 'uuid', (col) =>
       col.notNull().references('users.id'),
@@ -297,7 +353,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     )
     .addColumn('email', 'varchar(255)', (col) => col.notNull())
     .addColumn('organization_id', 'uuid', (col) =>
-      col.references('organizations.id').onDelete('set null'),
+      col.notNull().references('organizations.id').onDelete('set null'),
     )
     .addColumn('role_id', 'uuid', (col) =>
       col.references('roles.id').onDelete('cascade'),
@@ -675,4 +731,5 @@ export async function down(db: Kysely<any>): Promise<void> {
   await sql`DROP TYPE IF EXISTS permission_action`.execute(db);
   await sql`DROP TYPE IF EXISTS permission_resource`.execute(db);
   await sql`DROP TYPE IF EXISTS organization_type`.execute(db);
+  await sql`DROP TYPE IF EXISTS user_role`.execute(db);
 }

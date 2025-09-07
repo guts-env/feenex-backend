@@ -1,11 +1,11 @@
 import {
   IsEmail,
-  IsEnum,
+  IsIn,
   IsString,
   MinLength,
   ValidateIf,
 } from 'class-validator';
-import { AccountTypeEnum } from '@/common/constants/enums';
+import { type OrganizationType } from '@/database/types/db';
 
 export default class UserRegisterDto {
   @IsEmail()
@@ -15,14 +15,12 @@ export default class UserRegisterDto {
   @MinLength(8)
   password!: string;
 
-  @IsEnum(AccountTypeEnum, {
-    message: 'Account type must be either personal or business.',
+  @IsIn(['business', 'personal'], {
+    message: 'Org type must be either personal or business.',
   })
-  accountType!: AccountTypeEnum;
+  orgType!: OrganizationType;
 
-  @ValidateIf(
-    (o: UserRegisterDto) => o.accountType === AccountTypeEnum.BUSINESS,
-  )
+  @ValidateIf((o: UserRegisterDto) => o.orgType === 'business')
   @IsString({
     message: 'Organization name is required.',
   })

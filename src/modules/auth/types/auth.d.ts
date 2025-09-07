@@ -1,12 +1,12 @@
 import {
-  AccountTypeEnum,
   PermissionActionEnum,
   PermissionResourceEnum,
 } from '@/common/constants/enums';
 import { type Request } from 'express';
-import { type IBaseInterface } from '@/common/modules/base/types/base';
+import { type IBaseRepositoryInterface } from '@/common/modules/base/types/base';
 import { type IRole } from '@/common/types/common';
-import { type IOrganization } from '@/modules/organizations/types/organizations';
+import { type IRepositoryOrganization } from '@/modules/organizations/types/organizations';
+import { type OrganizationType } from '@/database/types/db';
 
 export interface IRepositoryAuth extends IBaseRepositoryInterface {
   user_id: string;
@@ -17,14 +17,14 @@ export interface IRegisterUserInput {
   email: string;
   hashedPassword: string;
   organizationName: string;
-  accountType: AccountTypeEnum;
+  orgType: OrganizationType;
 }
 
 export interface IRegisterInvitedUserInput {
   email: string;
   hashedPassword: string;
   orgId: string;
-  accountType: AccountTypeEnum;
+  orgType: OrganizationType;
 }
 
 export interface IValidateUserInput {
@@ -32,13 +32,16 @@ export interface IValidateUserInput {
   password: string;
 }
 
-export interface IAuthUser extends IBaseInterface {
+export interface IAuthUser extends IBaseRepositoryInterface {
   id: string;
   user_id: string;
   password: string;
 }
 
-export type IUserPassportOrg = Pick<IOrganization, 'id' | 'name' | 'type'>;
+export type IUserPassportOrg = Pick<
+  IRepositoryOrganization,
+  'id' | 'name' | 'type'
+>;
 
 export interface IUserPassport {
   email: string;

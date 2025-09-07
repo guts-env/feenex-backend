@@ -1,31 +1,32 @@
-import {
-  type IBaseInterface,
-  type IBaseRepositoryInterface,
-} from '@/common/modules/base/types/base';
-import { AccountTypeEnum, UserRoleEnum } from '@/common/constants/enums';
+import { type IBaseRepositoryInterface } from '@/common/modules/base/types/base';
 import { type IRole } from '@/common/types/common';
-import { type IOrganization } from '@/modules/organizations/types/organizations';
+import { type IRepositoryOrganization } from '@/modules/organizations/types/organizations';
 import { type IUserPassportOrg } from '@/modules/auth/types/auth';
+import { OrganizationType, UserRole } from '@/database/types/db';
 
-export interface IRepositoryUser extends IBaseRepositoryInterface {
+export interface IBaseRepositoryUser extends IBaseRepositoryInterface {
   email: string;
-  first_name?: string;
-  middle_name?: string;
-  last_name?: string;
+  first_name?: string | null;
+  middle_name?: string | null;
+  last_name?: string | null;
 }
-export interface IUserWithOrganizationAndRole extends IRepositoryUser {
+
+export interface IRepositoryUserWithRole extends IBaseRepositoryUser {
+  role_id: string;
+  role_name: UserRole;
+}
+
+export interface IUserWithOrgAndRole extends IRepositoryUserWithRole {
   org_id: string;
   org_name: string;
-  org_type: AccountTypeEnum;
-  role_id: string;
-  role_name: UserRoleEnum;
+  org_type: OrganizationType;
 }
 
-export interface IUser extends IBaseInterface {
+export interface IUser extends IBaseRepositoryInterface {
   email: string;
-  first_name?: string;
-  middle_name?: string;
-  last_name?: string;
-  organization: Partial<IOrganization> & IUserPassportOrg;
+  first_name?: string | null;
+  middle_name?: string | null;
+  last_name?: string | null;
+  organization: Partial<IRepositoryOrganization> & IUserPassportOrg;
   role: IRole;
 }

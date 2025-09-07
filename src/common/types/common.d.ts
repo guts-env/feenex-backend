@@ -1,9 +1,9 @@
 import { ALLOWED_CONTENT_TYPES } from '@/common/constants/upload';
-import { UserRoleEnum } from '@/common/constants/enums';
+import { UserRole } from '@/database/types/db';
 
 export interface IRepositoryRole {
   id: string;
-  name: UserRoleEnum;
+  name: UserRole;
 }
 
 export type IRole = IRepositoryRole;
