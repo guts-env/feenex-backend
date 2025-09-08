@@ -1,6 +1,6 @@
 import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
-export default class AcceptInviteDto {
+export default class ResetPasswordDto {
   @IsNotEmpty()
   @IsEmail()
   email!: string;
@@ -8,10 +8,10 @@ export default class AcceptInviteDto {
   @IsNotEmpty()
   @IsString()
   @MinLength(8)
-  password!: string;
+  newPassword!: string;
 
   @IsNotEmpty()
   @IsString()
   @MinLength(32)
-  inviteToken!: string;
+  resetToken!: string;
 }

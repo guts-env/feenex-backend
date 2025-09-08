@@ -14,12 +14,17 @@ import { InvitesService } from '@/modules/invites/invites.service';
 import { AuthRepository } from '@/modules/auth/auth.repository';
 import UserRegisterDto from '@/modules/auth/dto/user-register.dto';
 import RegisterInvitedUserDto from '@/modules/auth/dto/accept-invite.dto';
-import { UserLoginResDto } from '@/modules/auth/dto/user-login-res.dto';
+import UserLoginResDto from '@/modules/auth/dto/user-login-res.dto';
+import RequestResetPasswordDto from '@/modules/auth/dto/request-reset-password.dto';
+import ResetPasswordDto from '@/modules/auth/dto/reset-password.dto';
+import UpdatePasswordDto from '@/modules/auth/dto/update-password.dto';
 import {
+  type IAuthUser,
   type IUserPassport,
   type IValidateUserInput,
 } from '@/modules/auth/types/auth';
 import { type IUser } from '@/modules/users/types/users';
+import { createHash, randomBytes } from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -31,6 +36,18 @@ export class AuthService {
     private readonly userService: UsersService,
     private readonly authRepository: AuthRepository,
   ) {}
+
+  async findByUserId(userId: string): Promise<IAuthUser> {
+    const auth = await this.authRepository.findByUserId(userId);
+
+    if (!auth) {
+      throw new UnauthorizedException({
+        message: 'Account not activated.',
+      });
+    }
+
+    return auth;
+  }
 
   async register(dto: UserRegisterDto): Promise<void> {
     const { email, password, orgType, organizationName } = dto;
@@ -139,13 +156,7 @@ export class AuthService {
       });
     }
 
-    const auth = await this.authRepository.findByUserId(user.id);
-
-    if (!auth) {
-      throw new UnauthorizedException({
-        message: 'Account not activated.',
-      });
-    }
+    const auth = await this.findByUserId(user.id);
 
     const isPasswordValid = await this.passwordService.compare(
       inputPassword,
@@ -166,5 +177,108 @@ export class AuthService {
       accessToken: this.jwtService.sign(user),
       user,
     });
+  }
+
+  async requestResetPassword(dto: RequestResetPasswordDto): Promise<string> {
+    const { email } = dto;
+
+    const user = await this.userService.findByEmail(email);
+    if (!user) {
+      throw new NotFoundException({ message: 'User does not exist.' });
+    }
+
+    const auth = await this.findByUserId(user.id);
+    if (!auth) {
+      throw new UnauthorizedException({
+        message: 'Account not activated.',
+      });
+    }
+
+    const resetToken = this.generateResetPasswordToken();
+    const resetLink = `https://feenex.com/auth/reset-password?prt=${resetToken}`;
+
+    const hashedToken = this.hashToken(resetToken);
+    await this.authRepository.requestResetPassword(auth.id, hashedToken);
+
+    return resetLink;
+  }
+
+  async updatePassword(dto: UpdatePasswordDto) {
+    const { email, currentPassword, newPassword } = dto;
+
+    const user = await this.validateUser({
+      email,
+      password: currentPassword,
+    });
+
+    const auth = await this.findByUserId(user.id);
+    if (!auth) {
+      throw new UnauthorizedException({
+        message: 'Account not activated.',
+      });
+    }
+
+    const hashedPassword = await this.passwordService.hash(newPassword);
+
+    await this.authRepository.updatePassword(auth.id, hashedPassword);
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const { email, newPassword, resetToken } = dto;
+
+    const user = await this.userService.findByEmail(email);
+    if (!user) {
+      throw new NotFoundException({ message: 'User does not exist.' });
+    }
+
+    const auth = await this.findByUserId(user.id);
+    if (!auth) {
+      throw new UnauthorizedException({
+        message: 'Account not activated.',
+      });
+    }
+
+    const isPasswordSameAsCurrent = await this.passwordService.compare(
+      newPassword,
+      auth.password,
+    );
+
+    if (isPasswordSameAsCurrent) {
+      throw new BadRequestException({
+        message: `Choose a password you haven't used before.`,
+      });
+    }
+
+    if (!auth.reset_password_token || !auth.reset_password_token_expires_at) {
+      throw new BadRequestException({
+        message: 'No active reset request found.',
+      });
+    }
+
+    if (auth.reset_password_token_expires_at < new Date()) {
+      throw new BadRequestException({
+        message: 'Reset password request has expired.',
+      });
+    }
+
+    const hashedToken = this.hashToken(resetToken);
+
+    if (auth.reset_password_token !== hashedToken) {
+      throw new BadRequestException({
+        message: 'Invalid reset token.',
+      });
+    }
+
+    const hashedPassword = await this.passwordService.hash(newPassword);
+    await this.authRepository.resetPassword(auth.id, hashedPassword);
+  }
+
+  private generateResetPasswordToken(): string {
+    const token = randomBytes(32).toString('base64url');
+    return token;
+  }
+
+  private hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
   }
 }

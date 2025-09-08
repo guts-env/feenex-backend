@@ -59,6 +59,8 @@ export interface Auth {
   created_at: Generated<Timestamp>;
   id: Generated<string>;
   password: string;
+  reset_password_token: string | null;
+  reset_password_token_expires_at: Timestamp | null;
   updated_at: Generated<Timestamp>;
   user_id: string;
 }

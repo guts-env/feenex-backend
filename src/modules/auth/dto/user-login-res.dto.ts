@@ -18,7 +18,7 @@ class UserLoginDto {
   organization!: UserOrganizationResDto;
 }
 
-export class UserLoginResDto {
+export default class UserLoginResDto {
   @Expose()
   accessToken!: string;
 

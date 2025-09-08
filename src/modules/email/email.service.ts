@@ -123,6 +123,46 @@ export class EmailService {
     );
   }
 
+  async sendResetPasswordEmail(toEmail: string, resetLink: string) {
+    if (!this.enableEmailService) {
+      return;
+    }
+    const htmlTemplate = await this.getTemplate('reset-password', 'html');
+    const txtTemplate = await this.getTemplate('reset-password', 'txt');
+
+    const subject = 'FeeNex - Reset Your Password';
+    const html = this.replaceVariables(htmlTemplate, { resetLink });
+    const plainText = this.replaceVariables(txtTemplate, { resetLink });
+
+    const command = new SendEmailCommand({
+      Source: this.sourceEmail,
+      Destination: {
+        ToAddresses: [toEmail],
+      },
+      Message: {
+        Subject: {
+          Data: subject,
+          Charset: 'UTF-8',
+        },
+        Body: {
+          Text: {
+            Data: plainText,
+            Charset: 'UTF-8',
+          },
+          Html: {
+            Data: html,
+            Charset: 'UTF-8',
+          },
+        },
+      },
+    });
+
+    const result = await this.sesClient.send(command);
+    this.logger.log(
+      `Reset password email sent to ${toEmail}. MessageId: ${result.MessageId}`,
+    );
+  }
+
   async getTemplate(
     templateName: string,
     type: 'html' | 'txt',

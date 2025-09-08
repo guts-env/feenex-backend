@@ -36,6 +36,8 @@ export interface IAuthUser extends IBaseRepositoryInterface {
   id: string;
   user_id: string;
   password: string;
+  reset_password_token?: string | null;
+  reset_password_token_expires_at?: Date | null;
 }
 
 export type IUserPassportOrg = Pick<

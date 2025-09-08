@@ -5,6 +5,9 @@ export const ModuleRoutes = {
       Register: 'register',
       AcceptInvite: 'accept-invite',
       Login: 'login',
+      RequestResetPassword: 'request-reset-password',
+      ResetPassword: 'reset-password',
+      UpdatePassword: 'update-password',
     },
   },
   Categories: {

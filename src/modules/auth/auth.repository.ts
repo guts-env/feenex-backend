@@ -113,13 +113,44 @@ export class AuthRepository extends BaseRepository {
     }
   }
 
-  async findByUserId(id: string): Promise<IRepositoryAuth> {
+  async findByUserId(userId: string): Promise<IRepositoryAuth> {
     const result = await this.db
       .selectFrom('auth')
       .selectAll()
-      .where('user_id', '=', id)
+      .where('user_id', '=', userId)
       .executeTakeFirstOrThrow();
 
     return result;
+  }
+
+  async updatePassword(id: string, hashedPassword: string): Promise<void> {
+    await this.db
+      .updateTable('auth')
+      .set({ password: hashedPassword })
+      .where('id', '=', id)
+      .execute();
+  }
+
+  async requestResetPassword(id: string, hashedToken: string): Promise<void> {
+    await this.db
+      .updateTable('auth')
+      .set({
+        reset_password_token: hashedToken,
+        reset_password_token_expires_at: sql`NOW() + INTERVAL '1 hour'`,
+      })
+      .where('id', '=', id)
+      .execute();
+  }
+
+  async resetPassword(id: string, hashedPassword: string): Promise<void> {
+    await this.db
+      .updateTable('auth')
+      .set({
+        password: hashedPassword,
+        reset_password_token: null,
+        reset_password_token_expires_at: null,
+      })
+      .where('id', '=', id)
+      .execute();
   }
 }
