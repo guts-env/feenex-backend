@@ -218,8 +218,8 @@ export class AuthService {
       });
     }
 
+    await this.checkIfPasswordIsSameAsCurrent(newPassword, auth.password);
     const hashedPassword = await this.passwordService.hash(newPassword);
-
     await this.authRepository.updatePassword(auth.id, hashedPassword);
   }
 
@@ -238,20 +238,9 @@ export class AuthService {
       });
     }
 
-    const isPasswordSameAsCurrent = await this.passwordService.compare(
-      newPassword,
-      auth.password,
-    );
-
-    if (isPasswordSameAsCurrent) {
-      throw new BadRequestException({
-        message: `Choose a password you haven't used before.`,
-      });
-    }
-
     if (!auth.reset_password_token || !auth.reset_password_token_expires_at) {
       throw new BadRequestException({
-        message: 'No active reset request found.',
+        message: 'Invalid reset request.',
       });
     }
 
@@ -262,15 +251,33 @@ export class AuthService {
     }
 
     const hashedToken = this.hashToken(resetToken);
-
     if (auth.reset_password_token !== hashedToken) {
       throw new BadRequestException({
         message: 'Invalid reset token.',
       });
     }
 
+    await this.checkIfPasswordIsSameAsCurrent(newPassword, auth.password);
     const hashedPassword = await this.passwordService.hash(newPassword);
     await this.authRepository.resetPassword(auth.id, hashedPassword);
+  }
+
+  private async checkIfPasswordIsSameAsCurrent(
+    password: string,
+    hashedPassword: string,
+  ): Promise<boolean> {
+    const isPasswordSameAsCurrent = await this.passwordService.compare(
+      password,
+      hashedPassword,
+    );
+
+    if (isPasswordSameAsCurrent) {
+      throw new BadRequestException({
+        message: `Choose a password you haven't used before.`,
+      });
+    }
+
+    return isPasswordSameAsCurrent;
   }
 
   private generateResetPasswordToken(): string {

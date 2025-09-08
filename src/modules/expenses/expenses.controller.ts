@@ -33,6 +33,7 @@ export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
 
   @Get()
+  @HttpCode(HttpStatus.OK)
   getExpenses(
     @Request() req: IAuthenticatedRequest,
     @Query() query: GetExpensesDto,
@@ -41,6 +42,7 @@ export class ExpensesController {
   }
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   createManualExpense(
     @Request() req: IAuthenticatedRequest,
     @Body() createExpenseDto: CreateManualExpenseDto,
@@ -53,6 +55,7 @@ export class ExpensesController {
   }
 
   @Post(ModuleRoutes.Expenses.Paths.Auto)
+  @HttpCode(HttpStatus.ACCEPTED)
   createAutoExpense(
     @Request() req: IAuthenticatedRequest,
     @Body() createExpenseDto: CreateOcrExpenseDto,
@@ -65,6 +68,7 @@ export class ExpensesController {
   }
 
   @Put(':id')
+  @HttpCode(HttpStatus.OK)
   updateExpense(
     @Param('id') id: string,
     @Request() req: IAuthenticatedRequest,
@@ -79,6 +83,7 @@ export class ExpensesController {
   }
 
   @Get(':id')
+  @HttpCode(HttpStatus.OK)
   getExpenseById(
     @Param('id') id: string,
     @CurrentOrganization('id') orgId: string,
@@ -87,6 +92,7 @@ export class ExpensesController {
   }
 
   @Patch(':id/' + ModuleRoutes.Expenses.Paths.Verify)
+  @HttpCode(HttpStatus.OK)
   verifyExpense(
     @Param('id') id: string,
     @Request() req: IAuthenticatedRequest,

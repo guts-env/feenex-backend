@@ -3,6 +3,7 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   Request,
   UseGuards,
@@ -17,6 +18,7 @@ import UserLoginResDto from '@/modules/auth/dto/user-login-res.dto';
 import RequestResetPasswordDto from '@/modules/auth/dto/request-reset-password.dto';
 import ResetPasswordDto from '@/modules/auth/dto/reset-password.dto';
 import UpdatePasswordDto from '@/modules/auth/dto/update-password.dto';
+import { Authenticated } from '@/modules/auth/decorators/auth.decorator';
 import { type IAuthenticatedRequest } from '@/modules/auth/types/auth';
 
 @Controller(ModuleRoutes.Auth.Main)
@@ -53,13 +55,14 @@ export class AuthController {
     );
   }
 
-  @Post(ModuleRoutes.Auth.Paths.ResetPassword)
+  @Patch(ModuleRoutes.Auth.Paths.ResetPassword)
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     await this.authService.resetPassword(resetPasswordDto);
   }
 
-  @Post(ModuleRoutes.Auth.Paths.UpdatePassword)
+  @Authenticated()
+  @Patch(ModuleRoutes.Auth.Paths.UpdatePassword)
   @HttpCode(HttpStatus.OK)
   async updatePassword(@Body() updatePasswordDto: UpdatePasswordDto) {
     await this.authService.updatePassword(updatePasswordDto);
