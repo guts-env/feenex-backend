@@ -1,7 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { BullModule } from '@nestjs/bullmq';
+import {
+  REDIS_HOST_CONFIG_KEY,
+  REDIS_PORT_CONFIG_KEY,
+} from '@/config/keys.config';
 import AwsConfig from '@/config/aws.config';
 import GcpConfig from '@/config/gcp.config';
 import { AuthModule } from '@/modules/auth/auth.module';
@@ -13,6 +18,7 @@ import { ExpensesModule } from '@/modules/expenses/expenses.module';
 import { CategoriesModule } from '@/modules/categories/categories.module';
 import { InvitesModule } from '@/modules/invites/invites.module';
 import { ReportsModule } from '@/modules/reports/reports.module';
+import { QueueModule } from '@/modules/queue/queue.module';
 
 @Module({
   imports: [
@@ -27,6 +33,23 @@ import { ReportsModule } from '@/modules/reports/reports.module';
         limit: 60,
       },
     ]),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        connection: {
+          host: configService.get<string>(REDIS_HOST_CONFIG_KEY),
+          port: Number(configService.get<string>(REDIS_PORT_CONFIG_KEY)),
+        },
+        defaultJobOptions: {
+          attempts: 3,
+          backoff: {
+            type: 'fixed',
+            delay: 2000,
+          },
+        },
+      }),
+    }),
     AuthModule,
     UsersModule,
     OrganizationsModule,
@@ -36,6 +59,7 @@ import { ReportsModule } from '@/modules/reports/reports.module';
     CategoriesModule,
     InvitesModule,
     ReportsModule,
+    QueueModule,
   ],
   controllers: [],
   providers: [

@@ -26,8 +26,8 @@ export class OcrService {
     });
   }
 
-  async extractText(orgId: string, userId: string, imageUrls: string[]) {
-    const ocrRecord = await this.ocrRepository.create(orgId, userId);
+  async extractText(imageUrls: string[]) {
+    const ocrRecord = await this.ocrRepository.create();
 
     try {
       const startTime = Date.now();

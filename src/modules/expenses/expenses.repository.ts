@@ -9,9 +9,10 @@ import {
   type IBaseRepositoryExpense,
 } from '@/modules/expenses/types/expenses';
 import {
-  ExpenseSource,
-  ExpenseStatus,
+  type ExpenseSource,
+  type ExpenseStatus,
   type CurrencyCode,
+  type ProcessingStatus,
 } from '@/database/types/db';
 import { SelectQueryBuilder } from 'kysely';
 
@@ -217,7 +218,11 @@ export class ExpensesRepository extends BaseRepository {
     }
   }
 
-  async create(orgId: string, userId: string, dto: CreateExpenseDto) {
+  async create(
+    orgId: string,
+    userId: string,
+    payload: CreateExpenseDto & { processingStatus: ProcessingStatus },
+  ): Promise<{ id: string }> {
     const {
       categoryId,
       merchantName,
@@ -231,10 +236,11 @@ export class ExpensesRepository extends BaseRepository {
       ocrResultId,
       llmResultId,
       source,
-    } = dto;
+      processingStatus,
+    } = payload;
 
     try {
-      await this.db
+      const expense = await this.db
         .insertInto('expenses')
         .values({
           organization_id: orgId,
@@ -249,14 +255,17 @@ export class ExpensesRepository extends BaseRepository {
           other_details: otherDetails ? JSON.stringify(otherDetails) : null,
           source,
           status: 'pending',
+          processing_status: processingStatus,
           photos: photos || null,
           ocr_result_id: ocrResultId || null,
           llm_result_id: llmResultId || null,
           created_by: userId,
           updated_by: userId,
         })
-        .returningAll()
+        .returning('id')
         .executeTakeFirstOrThrow();
+
+      return expense;
     } catch (error) {
       this.handleDatabaseError(error);
     }
@@ -287,7 +296,8 @@ export class ExpensesRepository extends BaseRepository {
     if (date !== undefined) updateObj['date'] = date;
     if (description !== undefined) updateObj['description'] = description;
     if (items !== undefined) updateObj['items'] = items;
-    if (otherDetails !== undefined) updateObj['other_details'] = otherDetails;
+    if (otherDetails !== undefined)
+      updateObj['other_details'] = JSON.stringify(otherDetails);
     if (photos !== undefined) updateObj['photos'] = photos;
 
     updateObj['updated_by'] = userId;

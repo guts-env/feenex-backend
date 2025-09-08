@@ -1,7 +1,5 @@
-import { REQUEST } from '@nestjs/core';
 import {
   ForbiddenException,
-  Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -20,7 +18,6 @@ import {
 } from '@/common/constants/logger';
 import PresignedUploadDto from '@/modules/upload/dto/presigned-upload.dto';
 import { type IAwsConfig } from '@/common/types/config';
-import { type IAuthenticatedRequest } from '@/modules/auth/types/auth';
 
 @Injectable()
 export class UploadService {
@@ -29,10 +26,7 @@ export class UploadService {
   private readonly presignedUrlExpiry: number;
   private readonly logger = new Logger(UploadService.name);
 
-  constructor(
-    private readonly configService: ConfigService,
-    @Inject(REQUEST) private readonly request: IAuthenticatedRequest,
-  ) {
+  constructor(private readonly configService: ConfigService) {
     const awsConfig = this.configService.get<IAwsConfig>(AWS_CONFIG_KEY)!;
 
     this.client = new S3Client({
@@ -61,10 +55,7 @@ export class UploadService {
 
       return presignedUrl;
     } catch (error) {
-      this.logFileUploadEvent(
-        GENERATE_PRESIGNED_URL_ERROR,
-        this.formatError(error),
-      );
+      this.logger.error(GENERATE_PRESIGNED_URL_ERROR, this.formatError(error));
       throw new InternalServerErrorException({
         message: 'Something went wrong while uploading file',
       });
@@ -77,7 +68,7 @@ export class UploadService {
   ): Promise<{ key: string; url: string; filename: string }> {
     try {
       if (!key.startsWith(orgId)) {
-        this.logFileUploadEvent(FILE_KEY_DOES_NOT_START_WITH_ORG_ID, {
+        this.logger.error(FILE_KEY_DOES_NOT_START_WITH_ORG_ID, {
           key,
           orgId,
         });
@@ -99,10 +90,7 @@ export class UploadService {
 
       return { key, url: presignedUrl, filename };
     } catch (error) {
-      this.logFileUploadEvent(
-        GENERATE_PRESIGNED_URL_ERROR,
-        this.formatError(error),
-      );
+      this.logger.error(GENERATE_PRESIGNED_URL_ERROR, this.formatError(error));
       throw new InternalServerErrorException({
         message: 'Error generating download URL',
       });
@@ -122,10 +110,7 @@ export class UploadService {
 
       return files;
     } catch (error) {
-      this.logFileUploadEvent(
-        GENERATE_PRESIGNED_URL_ERROR,
-        this.formatError(error),
-      );
+      this.logger.error(GENERATE_PRESIGNED_URL_ERROR, this.formatError(error));
       throw new InternalServerErrorException({
         message: 'Error generating download URL',
       });
@@ -137,27 +122,6 @@ export class UploadService {
       .map((p) => p.trim().replace(/^\/+|\/+$/g, ''))
       .filter(Boolean);
     return parts.join('/');
-  }
-
-  private logFileUploadEvent(
-    event: string,
-    additionalData?: Record<string, any>,
-  ) {
-    const request = this.request;
-
-    this.logger.error({
-      log: event,
-      route: request.url,
-      userId: request.user?.sub || 'unknown',
-      userEmail: request.user?.email || 'unknown',
-      userRole: request.user?.role?.name || 'unknown',
-      userOrg: request.user?.organization?.id || 'unknown',
-      method: request.method,
-      ip: request.ip,
-      userAgent: request.get('user-agent'),
-      timestamp: new Date().toISOString(),
-      ...additionalData,
-    });
   }
 
   private formatError(error: unknown) {

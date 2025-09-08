@@ -92,6 +92,7 @@ export interface Expenses {
   organization_id: string;
   other_details: Json | null;
   photos: string[] | null;
+  processing_status: Generated<ProcessingStatus>;
   source: ExpenseSource;
   status: Generated<ExpenseStatus>;
   updated_at: Generated<Timestamp>;
@@ -150,16 +151,13 @@ export interface Merchants {
 }
 
 export interface OcrResults {
-  confidence_score: Numeric | null;
   created_at: Generated<Timestamp>;
   error_message: string | null;
   id: Generated<string>;
   ocr_text: string | null;
-  organization_id: string;
   processing_time_ms: number | null;
   status: Generated<ProcessingStatus>;
   updated_at: Generated<Timestamp>;
-  user_id: string;
 }
 
 export interface Organizations {

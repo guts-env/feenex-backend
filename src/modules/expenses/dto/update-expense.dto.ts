@@ -6,5 +6,5 @@ import { type ExpenseStatus } from '@/database/types/db';
 export default class UpdateExpenseDto extends PartialType(CreateExpenseDto) {
   @IsOptional()
   @IsIn(['draft', 'pending', 'rejected', 'verified'])
-  status!: ExpenseStatus;
+  status?: ExpenseStatus;
 }

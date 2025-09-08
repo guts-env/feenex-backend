@@ -206,12 +206,6 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('id', 'uuid', (col) =>
       col.primaryKey().defaultTo(sql`gen_random_uuid()`),
     )
-    .addColumn('organization_id', 'uuid', (col) =>
-      col.notNull().references('organizations.id').onDelete('cascade'),
-    )
-    .addColumn('user_id', 'uuid', (col) =>
-      col.notNull().references('users.id').onDelete('cascade'),
-    )
     .addColumn('ocr_text', 'text')
     .addColumn('status', sql`processing_status`, (col) =>
       col.notNull().defaultTo('pending'),
@@ -303,6 +297,9 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('organization_id', 'uuid', (col) =>
       col.notNull().references('organizations.id').onDelete('cascade'),
     )
+    .addColumn('user_id', 'uuid', (col) =>
+      col.notNull().references('users.id').onDelete('cascade'),
+    )
     .addColumn('category_id', 'uuid', (col) =>
       col.notNull().references('categories.id'),
     )
@@ -325,6 +322,9 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('source', sql`expense_source`, (col) => col.notNull())
     .addColumn('status', sql`expense_status`, (col) =>
       col.notNull().defaultTo('pending'),
+    )
+    .addColumn('processing_status', sql`processing_status`, (col) =>
+      col.notNull().defaultTo('processing'),
     )
     .addColumn('verified_by', 'uuid', (col) => col.references('users.id'))
     .addColumn('import_id', 'uuid', (col) => col.references('imports.id'))
@@ -583,16 +583,6 @@ export async function up(db: Kysely<any>): Promise<void> {
     .createIndex('idx_categories_is_default')
     .on('categories')
     .column('is_default')
-    .execute();
-  await db.schema
-    .createIndex('idx_ocr_results_user_id')
-    .on('ocr_results')
-    .column('user_id')
-    .execute();
-  await db.schema
-    .createIndex('idx_ocr_results_organization_id')
-    .on('ocr_results')
-    .column('organization_id')
     .execute();
   await db.schema
     .createIndex('idx_ocr_results_status')

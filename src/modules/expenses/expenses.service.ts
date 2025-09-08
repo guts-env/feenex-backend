@@ -14,9 +14,8 @@ import {
 } from '@/modules/expenses/dto/create-expense.dto';
 import UpdateExpenseDto from '@/modules/expenses/dto/update-expense.dto';
 import GetExpenseResDto from '@/modules/expenses/dto/get-expense-res.dto';
-import { UploadService } from '@/modules/upload/upload.service';
-import { OcrService } from '@/modules/ocr/ocr.service';
-import { LlmService } from '@/modules/llm/llm.service';
+import { QueueService } from '@/modules/queue/queue.service';
+import { type ProcessingStatus } from '@/database/types/db';
 
 @Injectable()
 export class ExpensesService {
@@ -24,13 +23,21 @@ export class ExpensesService {
 
   constructor(
     private readonly expensesRepository: ExpensesRepository,
-    private readonly uploadService: UploadService,
-    private readonly ocrService: OcrService,
-    private readonly llmService: LlmService,
+    private readonly queueService: QueueService,
   ) {}
 
-  async createExpense(orgId: string, userId: string, dto: CreateExpenseDto) {
-    return this.expensesRepository.create(orgId, userId, dto);
+  async createExpense(
+    orgId: string,
+    userId: string,
+    payload: CreateExpenseDto & { processingStatus: ProcessingStatus },
+  ): Promise<{ id: string }> {
+    const expense = await this.expensesRepository.create(
+      orgId,
+      userId,
+      payload,
+    );
+
+    return expense;
   }
 
   createManualExpense(
@@ -41,6 +48,7 @@ export class ExpensesService {
     return this.createExpense(orgId, userId, {
       ...dto,
       source: 'manual',
+      processingStatus: 'completed',
     });
   }
 
@@ -50,32 +58,19 @@ export class ExpensesService {
     dto: CreateOcrExpenseDto,
   ) {
     try {
-      const getPresignedUrls =
-        await this.uploadService.createMultiplePresignedDownloadUrls(
-          dto.photos,
-          orgId,
-        );
-
-      const imageUrls = getPresignedUrls.map((psObj) => psObj.url);
-
-      const extractedData = await this.ocrService.extractText(
-        orgId,
-        userId,
-        imageUrls,
-      );
-
-      const analyzedData = await this.llmService.analyzeData(extractedData);
-
-      const expenseDto = analyzedData.data;
-
-      return this.createExpense(orgId, userId, {
-        ...dto,
-        ...expenseDto,
-        categoryId: '06384849-f2c8-4b5d-8992-a9f75168cdc9',
-        ocrResultId: extractedData.ocrResultId,
-        llmResultId: analyzedData.llmResultId,
+      const expense = await this.createExpense(orgId, userId, {
+        categoryId: 'd2a95b07-9356-4772-ab3a-193765c501a9',
         source: 'ocr',
+        merchantName: 'Processing...',
+        amount: '0.00',
+        date: new Date().toISOString(),
+        processingStatus: 'processing',
+        ...dto,
       });
+
+      console.log(expense);
+
+      await this.queueService.addExpenseJob(expense.id, orgId, userId, dto);
     } catch (error) {
       this.logger.error(error);
       throw new InternalServerErrorException(
@@ -104,13 +99,13 @@ export class ExpensesService {
     id: string,
     userId: string,
     orgId: string,
-    dto: UpdateExpenseDto,
+    payload: UpdateExpenseDto & { processingStatus?: ProcessingStatus },
   ): Promise<GetExpenseResDto> {
     const expense = await this.expensesRepository.update(
       id,
       userId,
       orgId,
-      dto,
+      payload,
     );
     return plainToInstance(GetExpenseResDto, expense);
   }

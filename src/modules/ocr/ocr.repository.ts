@@ -4,12 +4,10 @@ import { ProcessingStatus } from '@/database/types/db';
 
 @Injectable()
 export class OcrRepository extends BaseRepository {
-  async create(orgId: string, userId: string) {
+  async create() {
     return this.db
       .insertInto('ocr_results')
       .values({
-        organization_id: orgId,
-        user_id: userId,
         status: 'processing',
       })
       .returning('id')
