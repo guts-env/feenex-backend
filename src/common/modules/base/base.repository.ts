@@ -13,15 +13,11 @@ import { type DB } from '@/database/types/db';
 @Injectable()
 export abstract class BaseRepository {
   private readonly logger = new Logger(BaseRepository.name);
-  protected _db?: Kysely<DB>;
 
   constructor(private readonly dbService: DatabaseService) {}
 
   protected get db(): Kysely<DB> {
-    if (!this._db) {
-      this._db = this.dbService.trx();
-    }
-    return this._db;
+    return this.dbService.getDb();
   }
 
   protected handleDatabaseError(error: any): never {

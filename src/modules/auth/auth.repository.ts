@@ -123,6 +123,72 @@ export class AuthRepository extends BaseRepository {
     return result;
   }
 
+  async findUserWithAuthByEmail(email: string) {
+    const result = await this.db
+      .selectFrom('users as u')
+      .innerJoin('user_organizations as uo', 'u.id', 'uo.user_id')
+      .innerJoin('organizations as o', 'uo.organization_id', 'o.id')
+      .innerJoin('roles as r', 'uo.role_id', 'r.id')
+      .innerJoin('auth as a', 'u.id', 'a.user_id')
+      .select([
+        'u.id',
+        'u.email',
+        'u.first_name',
+        'u.middle_name',
+        'u.last_name',
+        'u.created_at',
+        'u.updated_at',
+        'o.id as org_id',
+        'o.name as org_name',
+        'o.type as org_type',
+        'r.id as role_id',
+        'r.name as role_name',
+        'a.id as auth_id',
+        'a.user_id as auth_user_id',
+        'a.password',
+        'a.reset_password_token',
+        'a.reset_password_token_expires_at',
+        'a.created_at as auth_created_at',
+        'a.updated_at as auth_updated_at',
+      ])
+      .where('u.email', '=', email)
+      .executeTakeFirst();
+
+    if (!result) {
+      return null;
+    }
+
+    return {
+      user: {
+        id: result.id,
+        email: result.email,
+        first_name: result.first_name,
+        middle_name: result.middle_name,
+        last_name: result.last_name,
+        created_at: result.created_at,
+        updated_at: result.updated_at,
+        organization: {
+          id: result.org_id,
+          name: result.org_name,
+          type: result.org_type,
+        },
+        role: {
+          id: result.role_id,
+          name: result.role_name,
+        },
+      },
+      auth: {
+        id: result.auth_id,
+        user_id: result.auth_user_id,
+        password: result.password,
+        reset_password_token: result.reset_password_token,
+        reset_password_token_expires_at: result.reset_password_token_expires_at,
+        created_at: result.auth_created_at,
+        updated_at: result.auth_updated_at,
+      },
+    };
+  }
+
   async updatePassword(id: string, hashedPassword: string): Promise<void> {
     await this.db
       .updateTable('auth')

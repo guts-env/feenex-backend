@@ -37,18 +37,6 @@ export class AuthService {
     private readonly authRepository: AuthRepository,
   ) {}
 
-  async findByUserId(userId: string): Promise<IAuthUser> {
-    const auth = await this.authRepository.findByUserId(userId);
-
-    if (!auth) {
-      throw new UnauthorizedException({
-        message: 'Account not activated.',
-      });
-    }
-
-    return auth;
-  }
-
   async register(dto: UserRegisterDto): Promise<void> {
     const { email, password, orgType, organizationName } = dto;
 
@@ -139,28 +127,23 @@ export class AuthService {
     await this.authRepository.createInvitedUser(registrationPayload, invite.id);
   }
 
-  async validateUser(input: IValidateUserInput): Promise<IUser> {
+  async validateUser(
+    input: IValidateUserInput,
+  ): Promise<{ user: IUser; auth: IAuthUser }> {
     const { email: inputEmail, password: inputPassword } = input;
 
-    const user = await this.userService.findByEmail(inputEmail);
+    const result =
+      await this.authRepository.findUserWithAuthByEmail(inputEmail);
 
-    if (!user) {
+    if (!result) {
       throw new UnauthorizedException({
         message: 'Invalid credentials.',
       });
     }
-
-    if (!user.organization.id) {
-      throw new UnauthorizedException({
-        message: 'Invalid credentials.',
-      });
-    }
-
-    const auth = await this.findByUserId(user.id);
 
     const isPasswordValid = await this.passwordService.compare(
       inputPassword,
-      auth.password,
+      result.auth.password,
     );
 
     if (!isPasswordValid) {
@@ -169,7 +152,7 @@ export class AuthService {
       });
     }
 
-    return user;
+    return { user: result.user, auth: result.auth };
   }
 
   authenticate(user: IUserPassport): UserLoginResDto {
@@ -182,23 +165,16 @@ export class AuthService {
   async requestResetPassword(dto: RequestResetPasswordDto): Promise<string> {
     const { email } = dto;
 
-    const user = await this.userService.findByEmail(email);
-    if (!user) {
+    const result = await this.authRepository.findUserWithAuthByEmail(email);
+    if (!result) {
       throw new NotFoundException({ message: 'User does not exist.' });
-    }
-
-    const auth = await this.findByUserId(user.id);
-    if (!auth) {
-      throw new UnauthorizedException({
-        message: 'Account not activated.',
-      });
     }
 
     const resetToken = this.generateResetPasswordToken();
     const resetLink = `https://feenex.com/auth/reset-password?prt=${resetToken}`;
 
     const hashedToken = this.hashToken(resetToken);
-    await this.authRepository.requestResetPassword(auth.id, hashedToken);
+    await this.authRepository.requestResetPassword(result.auth.id, hashedToken);
 
     return resetLink;
   }
@@ -206,17 +182,10 @@ export class AuthService {
   async updatePassword(dto: UpdatePasswordDto) {
     const { email, currentPassword, newPassword } = dto;
 
-    const user = await this.validateUser({
+    const { auth } = await this.validateUser({
       email,
       password: currentPassword,
     });
-
-    const auth = await this.findByUserId(user.id);
-    if (!auth) {
-      throw new UnauthorizedException({
-        message: 'Account not activated.',
-      });
-    }
 
     await this.checkIfPasswordIsSameAsCurrent(newPassword, auth.password);
     const hashedPassword = await this.passwordService.hash(newPassword);
@@ -226,17 +195,12 @@ export class AuthService {
   async resetPassword(dto: ResetPasswordDto) {
     const { email, newPassword, resetToken } = dto;
 
-    const user = await this.userService.findByEmail(email);
-    if (!user) {
+    const result = await this.authRepository.findUserWithAuthByEmail(email);
+    if (!result) {
       throw new NotFoundException({ message: 'User does not exist.' });
     }
 
-    const auth = await this.findByUserId(user.id);
-    if (!auth) {
-      throw new UnauthorizedException({
-        message: 'Account not activated.',
-      });
-    }
+    const { auth } = result;
 
     if (!auth.reset_password_token || !auth.reset_password_token_expires_at) {
       throw new BadRequestException({
