@@ -31,7 +31,7 @@ export class InvitesRepository extends BaseRepository {
   async findByEmail(email: string): Promise<IRepositoryInvite | undefined> {
     try {
       const result = await this.baseQuery
-        .where('email', '=', email)
+        .where('i.email', '=', email)
         .executeTakeFirst();
 
       const transformedResult = result

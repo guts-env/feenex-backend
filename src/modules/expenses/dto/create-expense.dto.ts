@@ -72,7 +72,7 @@ export class CreateExpenseDto extends BaseExpenseDto {
 
   @IsNotEmpty()
   @IsNumber({ maxDecimalPlaces: 2 })
-  amount!: string;
+  amount!: number;
 
   @IsNotEmpty()
   @IsDateString()
@@ -107,7 +107,7 @@ export class CreateManualExpenseDto extends BaseExpenseDto {
 
   @IsNotEmpty()
   @IsNumber({ maxDecimalPlaces: 2 })
-  amount!: string;
+  amount!: number;
 
   @IsNotEmpty()
   @IsDateString()

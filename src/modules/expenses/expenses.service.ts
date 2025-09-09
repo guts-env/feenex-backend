@@ -15,6 +15,7 @@ import {
 import UpdateExpenseDto from '@/modules/expenses/dto/update-expense.dto';
 import GetExpenseResDto from '@/modules/expenses/dto/get-expense-res.dto';
 import { QueueService } from '@/modules/queue/queue.service';
+import ExpenseEventsGateway from '@/modules/sockets/expense-events.gateway';
 import { type ProcessingStatus } from '@/database/types/db';
 
 @Injectable()
@@ -24,13 +25,19 @@ export class ExpensesService {
   constructor(
     private readonly expensesRepository: ExpensesRepository,
     private readonly queueService: QueueService,
+    private readonly expensesEventsGateway: ExpenseEventsGateway,
   ) {}
 
   async createExpense(
     orgId: string,
     userId: string,
     payload: CreateExpenseDto & { processingStatus: ProcessingStatus },
-  ): Promise<{ id: string }> {
+  ): Promise<{
+    id: string;
+    organization_id: string;
+    merchant_name: string;
+    amount: number;
+  }> {
     const expense = await this.expensesRepository.create(
       orgId,
       userId,
@@ -40,16 +47,20 @@ export class ExpensesService {
     return expense;
   }
 
-  createManualExpense(
+  async createManualExpense(
     orgId: string,
     userId: string,
     dto: CreateManualExpenseDto,
   ) {
-    return this.createExpense(orgId, userId, {
+    const expense = await this.createExpense(orgId, userId, {
       ...dto,
       source: 'manual',
       processingStatus: 'completed',
     });
+
+    this.expensesEventsGateway.notifyCreatedExpense(orgId, userId, expense);
+
+    return expense;
   }
 
   async createAutoExpense(
@@ -62,13 +73,11 @@ export class ExpensesService {
         categoryId: 'd2a95b07-9356-4772-ab3a-193765c501a9',
         source: 'ocr',
         merchantName: 'Processing...',
-        amount: '0.00',
+        amount: 0.0,
         date: new Date().toISOString(),
         processingStatus: 'processing',
         ...dto,
       });
-
-      console.log(expense);
 
       await this.queueService.addExpenseJob(expense.id, orgId, userId, dto);
     } catch (error) {

@@ -6,6 +6,7 @@ import { UploadService } from '@/modules/upload/upload.service';
 import { OcrService } from '@/modules/ocr/ocr.service';
 import { LlmService } from '@/modules/llm/llm.service';
 import { ExpensesService } from '@/modules/expenses/expenses.service';
+import ExpensesEventsGateway from '@/modules/sockets/expense-events.gateway';
 import { CreateOcrExpenseDto } from '@/modules/expenses/dto/create-expense.dto';
 import { type IExtractedData } from '@/modules/llm/types/llm';
 
@@ -21,6 +22,7 @@ export class ExpensesConsumer extends WorkerHost {
     private readonly ocrService: OcrService,
     private readonly llmService: LlmService,
     private readonly expensesService: ExpensesService,
+    private readonly expensesEventsGateway: ExpensesEventsGateway,
   ) {
     super();
   }
@@ -71,11 +73,23 @@ export class ExpensesConsumer extends WorkerHost {
       await job.updateData(job.data);
     }
 
-    return this.expensesService.updateExpense(expenseId, userId, orgId, {
-      ...job.data.analyzedData,
-      ocrResultId: job.data.ocrResultId,
-      llmResultId: job.data.llmResultId,
-      processingStatus: 'completed',
+    const createdAutoExpense = await this.expensesService.updateExpense(
+      expenseId,
+      userId,
+      orgId,
+      {
+        ...job.data.analyzedData,
+        ocrResultId: job.data.ocrResultId,
+        llmResultId: job.data.llmResultId,
+        processingStatus: 'completed',
+      },
+    );
+
+    this.expensesEventsGateway.notifyCreatedExpense(orgId, userId, {
+      id: createdAutoExpense.id,
+      organization_id: orgId,
+      merchant_name: createdAutoExpense.merchantName,
+      amount: createdAutoExpense.amount,
     });
   }
 

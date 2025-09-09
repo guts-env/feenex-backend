@@ -136,7 +136,7 @@ export class LlmService {
     const jsonData = JSON.parse(data) as IExtractedData;
 
     const merchantName = jsonData.merchantName || 'Merchant Name';
-    const amount = jsonData.amount || '1.00';
+    const amount = jsonData.amount ? Number(jsonData.amount) : 1.0;
     const date = jsonData.date || new Date().toISOString();
     const category = jsonData.category || 'Other';
     const items = jsonData.items || [];

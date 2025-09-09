@@ -25,7 +25,7 @@ export interface IBaseRepositoryExpense extends IBaseRepositoryInterface {
   >;
   merchant_name: string;
   photos?: string[] | null;
-  amount: string;
+  amount: number;
   currency: CurrencyCode;
   date: Date;
   description?: string | null;

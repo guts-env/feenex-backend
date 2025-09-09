@@ -7,17 +7,20 @@ import { DatabaseModule } from '@/database/database.module';
 import { UploadModule } from '@/modules/upload/upload.module';
 import { OcrModule } from '@/modules/ocr/ocr.module';
 import { LlmModule } from '@/modules/llm/llm.module';
+import ExpenseEventsGateway from '@/modules/sockets/expense-events.gateway';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   controllers: [ExpensesController],
-  providers: [ExpensesService, ExpensesRepository],
+  providers: [ExpensesService, ExpensesRepository, ExpenseEventsGateway],
   imports: [
     forwardRef(() => QueueModule),
+    JwtModule,
     DatabaseModule,
     UploadModule,
     OcrModule,
     LlmModule,
   ],
-  exports: [ExpensesService],
+  exports: [ExpensesService, ExpenseEventsGateway],
 })
 export class ExpensesModule {}

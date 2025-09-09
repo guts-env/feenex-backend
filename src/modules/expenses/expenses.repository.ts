@@ -60,7 +60,7 @@ export class ExpensesRepository extends BaseRepository {
   ): IBaseRepositoryExpense {
     const result: IBaseRepositoryExpense = {
       id: row['id'] as string,
-      amount: row['amount'] as string,
+      amount: row['amount'] ? Number(row['amount']) : 1.0,
       currency: row['currency'] as CurrencyCode,
       date: row['date'] as Date,
       description: row['description'] as string | null,
@@ -222,7 +222,12 @@ export class ExpensesRepository extends BaseRepository {
     orgId: string,
     userId: string,
     payload: CreateExpenseDto & { processingStatus: ProcessingStatus },
-  ): Promise<{ id: string }> {
+  ): Promise<{
+    id: string;
+    organization_id: string;
+    merchant_name: string;
+    amount: number;
+  }> {
     const {
       categoryId,
       merchantName,
@@ -262,10 +267,13 @@ export class ExpensesRepository extends BaseRepository {
           created_by: userId,
           updated_by: userId,
         })
-        .returning('id')
+        .returning(['id', 'organization_id', 'merchant_name', 'amount'])
         .executeTakeFirstOrThrow();
 
-      return expense;
+      return {
+        ...expense,
+        amount: Number(expense.amount),
+      };
     } catch (error) {
       this.handleDatabaseError(error);
     }
@@ -295,7 +303,7 @@ export class ExpensesRepository extends BaseRepository {
     if (amount !== undefined) updateObj['amount'] = amount;
     if (date !== undefined) updateObj['date'] = date;
     if (description !== undefined) updateObj['description'] = description;
-    if (items !== undefined) updateObj['items'] = items;
+    if (items !== undefined) updateObj['items'] = JSON.stringify(items);
     if (otherDetails !== undefined)
       updateObj['other_details'] = JSON.stringify(otherDetails);
     if (photos !== undefined) updateObj['photos'] = photos;

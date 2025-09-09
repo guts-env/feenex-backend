@@ -4,7 +4,7 @@ import {
 } from '@/modules/expenses/types/expenses';
 
 export interface IExtractedData {
-  amount: string;
+  amount: number;
   merchantName: string;
   items: IExpenseItem[];
   otherDetails: IExpenseOtherDetails[];
