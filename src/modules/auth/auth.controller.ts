@@ -32,14 +32,14 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() userRegisterDto: UserRegisterDto) {
     await this.authService.register(userRegisterDto);
-    return this.emailService.sendWelcomeEmail(userRegisterDto.email);
+    void this.emailService.sendWelcomeEmail(userRegisterDto.email);
   }
 
   @Post(ModuleRoutes.Auth.Paths.AcceptInvite)
   @HttpCode(HttpStatus.CREATED)
   async registerInvitedUser(@Body() inviteMemberDto: AcceptInviteDto) {
     await this.authService.registerInvitedUser(inviteMemberDto);
-    return this.emailService.sendWelcomeEmail(inviteMemberDto.email);
+    void this.emailService.sendWelcomeEmail(inviteMemberDto.email);
   }
 
   @Post(ModuleRoutes.Auth.Paths.RequestResetPassword)
@@ -49,7 +49,7 @@ export class AuthController {
   ) {
     const resetLink =
       await this.authService.requestResetPassword(resetPasswordDto);
-    return this.emailService.sendResetPasswordEmail(
+    void this.emailService.sendResetPasswordEmail(
       resetPasswordDto.email,
       resetLink,
     );
@@ -57,15 +57,15 @@ export class AuthController {
 
   @Patch(ModuleRoutes.Auth.Paths.ResetPassword)
   @HttpCode(HttpStatus.OK)
-  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    await this.authService.resetPassword(resetPasswordDto);
+  resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    return this.authService.resetPassword(resetPasswordDto);
   }
 
   @Authenticated()
   @Patch(ModuleRoutes.Auth.Paths.UpdatePassword)
   @HttpCode(HttpStatus.OK)
-  async updatePassword(@Body() updatePasswordDto: UpdatePasswordDto) {
-    await this.authService.updatePassword(updatePasswordDto);
+  updatePassword(@Body() updatePasswordDto: UpdatePasswordDto) {
+    return this.authService.updatePassword(updatePasswordDto);
   }
 
   @UseGuards(LocalAuthGuard)

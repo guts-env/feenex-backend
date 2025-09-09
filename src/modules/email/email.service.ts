@@ -22,6 +22,7 @@ export class EmailService {
     'email',
     'templates',
   );
+  private templateCache: Map<string, string> = new Map();
 
   constructor(private readonly configService: ConfigService) {
     const awsConfig = this.configService.get<IAwsConfig>(AWS_CONFIG_KEY)!;
@@ -36,9 +37,13 @@ export class EmailService {
     this.enableEmailService = Boolean(
       Number(this.configService.get<string>(ENABLE_EMAIL_SERVICE_CONFIG_KEY)),
     );
+
+    this.loadTemplates().catch((err) =>
+      this.logger.error('Failed to load email templates', err),
+    );
   }
 
-  async sendWelcomeEmail(toEmail: string) {
+  async sendWelcomeEmail(toEmail: string): Promise<void> {
     if (!this.enableEmailService) {
       return;
     }
@@ -79,7 +84,11 @@ export class EmailService {
     );
   }
 
-  async sendInviteEmail(toEmail: string, orgName: string, inviteLink: string) {
+  async sendInviteEmail(
+    toEmail: string,
+    orgName: string,
+    inviteLink: string,
+  ): Promise<void> {
     if (!this.enableEmailService) {
       return;
     }
@@ -123,7 +132,10 @@ export class EmailService {
     );
   }
 
-  async sendResetPasswordEmail(toEmail: string, resetLink: string) {
+  async sendResetPasswordEmail(
+    toEmail: string,
+    resetLink: string,
+  ): Promise<void> {
     if (!this.enableEmailService) {
       return;
     }
@@ -167,12 +179,41 @@ export class EmailService {
     templateName: string,
     type: 'html' | 'txt',
   ): Promise<string> {
+    const cacheKey = `${templateName}.${type}`;
+
+    const cached = this.templateCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const filePath = join(
       this.templatesPath,
       templateName,
       `${templateName}.${type}`,
     );
-    return await readFile(filePath, 'utf-8');
+
+    const template = await readFile(filePath, 'utf-8');
+    this.templateCache.set(cacheKey, template);
+
+    return template;
+  }
+
+  private async loadTemplates(): Promise<void> {
+    const templates = [
+      { name: 'welcome', types: ['html', 'txt'] },
+      { name: 'invite', types: ['html', 'txt'] },
+      { name: 'reset-password', types: ['html', 'txt'] },
+    ];
+
+    for (const { name, types } of templates) {
+      for (const type of types) {
+        try {
+          await this.getTemplate(name, type as 'html' | 'txt');
+        } catch {
+          this.logger.warn(`Failed to preload template ${name}.${type}`);
+        }
+      }
+    }
   }
 
   replaceVariables(
