@@ -39,8 +39,6 @@ export default class ExpenseEventsGateway
       amount: number;
     },
   ) {
-    console.log(orgId, expense);
-
     if (orgId !== expense.organization_id) {
       return;
     }

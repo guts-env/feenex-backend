@@ -1,14 +1,20 @@
 import { NestFactory, Reflector } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
+import helmet from 'helmet';
+import { AppModule } from '@/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    cors: {
+      origin: process.env.CORS_ORIGIN,
+    },
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
 
   app.set('query parser', 'extended');
+
+  app.use(helmet());
 
   app.useGlobalPipes(
     new ValidationPipe({
