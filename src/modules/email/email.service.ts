@@ -93,6 +93,15 @@ export class EmailService {
       return;
     }
 
+    if (!toEmail || !orgName || !inviteLink) {
+      this.logger.warn('Missing required parameters for invite email: ', {
+        toEmail,
+        orgName,
+        inviteLink,
+      });
+      return;
+    }
+
     const htmlTemplate = await this.getTemplate('invite', 'html');
     const txtTemplate = await this.getTemplate('invite', 'txt');
 
@@ -139,6 +148,18 @@ export class EmailService {
     if (!this.enableEmailService) {
       return;
     }
+
+    if (!resetLink || !toEmail) {
+      this.logger.warn(
+        'Missing required parameters for reset password email: ',
+        {
+          toEmail,
+          resetLink,
+        },
+      );
+      return;
+    }
+
     const htmlTemplate = await this.getTemplate('reset-password', 'html');
     const txtTemplate = await this.getTemplate('reset-password', 'txt');
 
