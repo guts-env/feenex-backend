@@ -7,6 +7,7 @@ import { type IBaseRepositoryInterface } from '@/common/modules/base/types/base'
 import { type IRole } from '@/common/types/common';
 import { type IRepositoryOrganization } from '@/modules/organizations/types/organizations';
 import { type OrganizationType } from '@/database/types/db';
+import { ORGANIZATION_ID_HEADER } from '@/common/constants/header';
 
 export interface IRepositoryAuth extends IBaseRepositoryInterface {
   user_id: string;
@@ -57,7 +58,7 @@ export type IAuthResponse = {
   user: IUserPassport;
 };
 
-export type IHeadersWithOrg = Headers & { 'x-organization-header': string };
+export type IHeadersWithOrg = Headers & { [ORGANIZATION_ID_HEADER]: string };
 export type IRequestWithOrgHeader = Request & IHeadersWithOrg;
 export interface IAuthenticatedRequest extends IRequestWithOrgHeader {
   user: IUserPassport;

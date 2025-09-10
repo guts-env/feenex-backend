@@ -23,6 +23,9 @@ export default class UserLoginResDto {
   accessToken!: string;
 
   @Expose()
+  refreshToken!: string;
+
+  @Expose()
   @Type(() => UserLoginDto)
   user!: UserLoginDto;
 }

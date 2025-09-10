@@ -6,11 +6,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { createHash, randomBytes } from 'crypto';
 import { plainToInstance } from 'class-transformer';
 import { UsersService } from '@/modules/users/users.service';
 import { PasswordService } from '@/modules/auth/password.service';
 import { OrganizationsService } from '@/modules/organizations/organizations.service';
 import { InvitesService } from '@/modules/invites/invites.service';
+import { RefreshTokenService } from '@/modules/auth/refresh-token.service';
 import { AuthRepository } from '@/modules/auth/auth.repository';
 import UserRegisterDto from '@/modules/auth/dto/user-register.dto';
 import RegisterInvitedUserDto from '@/modules/auth/dto/accept-invite.dto';
@@ -24,7 +26,6 @@ import {
   type IValidateUserInput,
 } from '@/modules/auth/types/auth';
 import { type IUser } from '@/modules/users/types/users';
-import { createHash, randomBytes } from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -34,6 +35,7 @@ export class AuthService {
     private readonly organizationService: OrganizationsService,
     private readonly passwordService: PasswordService,
     private readonly userService: UsersService,
+    private readonly refreshTokenService: RefreshTokenService,
     private readonly authRepository: AuthRepository,
   ) {}
 
@@ -155,11 +157,59 @@ export class AuthService {
     return { user: result.user, auth: result.auth };
   }
 
-  authenticate(user: IUserPassport): UserLoginResDto {
+  async authenticate(user: IUserPassport): Promise<UserLoginResDto> {
+    const accessToken = this.jwtService.sign(user);
+    const refreshToken = await this.refreshTokenService.generateRefreshToken(
+      user.sub,
+    );
+
     return plainToInstance(UserLoginResDto, {
-      accessToken: this.jwtService.sign(user),
+      accessToken,
+      refreshToken,
       user,
     });
+  }
+
+  async refreshAccessToken(
+    refreshToken: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const newRefreshToken =
+      await this.refreshTokenService.rotateRefreshToken(refreshToken);
+    const tokenData =
+      await this.refreshTokenService.validateRefreshToken(refreshToken);
+
+    const result = await this.authRepository.findUserWithAuthByUserId(
+      tokenData.userId,
+    );
+
+    const { user } = result || {};
+    if (!user) {
+      await this.refreshTokenService.revokeRefreshToken(newRefreshToken);
+      throw new UnauthorizedException({ message: 'User not found' });
+    }
+
+    const userPassport = {
+      sub: user.id,
+      email: user.email,
+      organization: {
+        id: user.organization.id,
+        name: user.organization.name,
+        type: user.organization.type,
+      },
+      role: user.role,
+    };
+
+    const accessToken = this.jwtService.sign(userPassport);
+
+    return { accessToken, refreshToken: newRefreshToken };
+  }
+
+  async logout(refreshToken: string): Promise<void> {
+    await this.refreshTokenService.revokeRefreshToken(refreshToken);
+  }
+
+  async logoutAllDevices(userId: string): Promise<void> {
+    await this.refreshTokenService.revokeAllUserTokens(userId);
   }
 
   async requestResetPassword(dto: RequestResetPasswordDto): Promise<string> {

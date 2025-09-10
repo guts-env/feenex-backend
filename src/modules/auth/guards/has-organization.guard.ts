@@ -14,6 +14,7 @@ import {
   USER_MISSING_ORG,
   USER_ORG_MISMATCH,
 } from '@/common/constants/logger';
+import { ORGANIZATION_ID_HEADER } from '@/common/constants/header';
 
 @Injectable()
 export class HasOrganizationGuard implements CanActivate {
@@ -51,7 +52,7 @@ export class HasOrganizationGuard implements CanActivate {
     request: IAuthenticatedRequest,
   ): IExtractedOrgHeader {
     const jwtOrg = request.user.organization.id;
-    const headerOrg = request.get('x-organization-id');
+    const headerOrg = request.get(ORGANIZATION_ID_HEADER);
 
     return {
       jwtOrg,

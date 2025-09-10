@@ -8,6 +8,9 @@ export const ModuleRoutes = {
       RequestResetPassword: 'request-reset-password',
       ResetPassword: 'reset-password',
       UpdatePassword: 'update-password',
+      Refresh: 'refresh',
+      Logout: 'logout',
+      LogoutAllDevices: 'logout-all',
     },
   },
   Categories: {
