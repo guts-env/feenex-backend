@@ -22,9 +22,7 @@ export class OrganizationRepository extends BaseRepository {
         'org.created_at',
         'org.updated_at',
         'u.id as created_by',
-        'u.email as created_by_email',
         'u2.id as updated_by',
-        'u2.email as updated_by_email',
       ]);
   }
 
@@ -46,9 +44,7 @@ export class OrganizationRepository extends BaseRepository {
           'org.created_at',
           'org.updated_at',
           'u.id as created_by',
-          'u.email as created_by_email',
           'u2.id as updated_by',
-          'u2.email as updated_by_email',
         ])
         .where('user_org.user_id', '=', userId)
         .execute();
@@ -57,11 +53,9 @@ export class OrganizationRepository extends BaseRepository {
         ...org,
         created_by: {
           id: org.created_by,
-          email: org.created_by_email,
         },
         updated_by: {
           id: org.updated_by,
-          email: org.updated_by_email,
         },
       }));
     } catch (error: any) {
@@ -79,11 +73,9 @@ export class OrganizationRepository extends BaseRepository {
         ...result,
         created_by: {
           id: result.created_by,
-          email: result.created_by_email,
         },
         updated_by: {
           id: result.updated_by,
-          email: result.updated_by_email,
         },
       };
     } catch (error: any) {
@@ -113,11 +105,9 @@ export class OrganizationRepository extends BaseRepository {
         ...result,
         created_by: {
           id: result.created_by,
-          email: result.created_by_email,
         },
         updated_by: {
           id: result.updated_by,
-          email: result.updated_by_email,
         },
       };
     } catch (error: any) {

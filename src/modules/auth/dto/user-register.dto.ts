@@ -1,6 +1,7 @@
 import {
   IsEmail,
   IsIn,
+  IsOptional,
   IsString,
   MinLength,
   ValidateIf,
@@ -8,6 +9,18 @@ import {
 import { type OrganizationType } from '@/database/types/db';
 
 export default class UserRegisterDto {
+  @IsString()
+  @MinLength(1)
+  firstName!: string;
+
+  @IsOptional()
+  @IsString()
+  middleName?: string;
+
+  @IsString()
+  @MinLength(1)
+  lastName?: string;
+
   @IsEmail()
   email!: string;
 
@@ -25,5 +38,5 @@ export default class UserRegisterDto {
     message: 'Organization name is required.',
   })
   @MinLength(1)
-  organizationName!: string;
+  orgName!: string;
 }

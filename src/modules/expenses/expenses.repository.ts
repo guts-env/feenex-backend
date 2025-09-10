@@ -78,16 +78,22 @@ export class ExpensesRepository extends BaseRepository {
       other_details: row['other_details'] as IExpenseOtherDetails[],
       created_by: {
         id: row['created_by'] as string,
-        email: row['created_by_email'] as string,
+        first_name: row['created_by_first_name'] as string,
+        last_name: row['created_by_last_name'] as string,
+        middle_name: row['created_by_middle_name'] as string,
       },
       updated_by: {
         id: row['updated_by'] as string,
-        email: row['updated_by_email'] as string,
+        first_name: row['updated_by_first_name'] as string,
+        last_name: row['updated_by_last_name'] as string,
+        middle_name: row['updated_by_middle_name'] as string,
       },
       verified_by: row['verified_by']
         ? {
             id: row['verified_by'] as string,
-            email: row['verified_by_email'] as string,
+            first_name: row['verified_by_first_name'] as string,
+            last_name: row['verified_by_last_name'] as string,
+            middle_name: row['verified_by_middle_name'] as string,
           }
         : null,
     };

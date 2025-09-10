@@ -14,11 +14,24 @@ export class AuthRepository extends BaseRepository {
     const trx = await this.db.startTransaction().execute();
 
     try {
-      const { email, hashedPassword, organizationName, orgType } = user;
+      const {
+        email,
+        hashedPassword,
+        orgName,
+        orgType,
+        firstName,
+        lastName,
+        middleName,
+      } = user;
 
       const newUser = await trx
         .insertInto('users')
-        .values({ email })
+        .values({
+          email,
+          first_name: firstName,
+          last_name: lastName,
+          middle_name: middleName,
+        })
         .returning('id')
         .executeTakeFirstOrThrow();
 
@@ -32,7 +45,7 @@ export class AuthRepository extends BaseRepository {
       const newOrg = await trx
         .insertInto('organizations')
         .values({
-          name: organizationName,
+          name: orgName,
           type: orgType,
           created_by: userId,
           updated_by: userId,
@@ -74,11 +87,17 @@ export class AuthRepository extends BaseRepository {
     const trx = await this.db.startTransaction().execute();
 
     try {
-      const { email, hashedPassword, orgId } = user;
+      const { email, hashedPassword, orgId, firstName, lastName, middleName } =
+        user;
 
       const newUser = await trx
         .insertInto('users')
-        .values({ email })
+        .values({
+          email,
+          first_name: firstName,
+          last_name: lastName,
+          middle_name: middleName,
+        })
         .returning('id')
         .executeTakeFirstOrThrow();
 

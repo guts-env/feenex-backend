@@ -6,7 +6,7 @@ import { OrganizationType, UserRole } from '@/database/types/db';
 
 export interface IBaseRepositoryUser extends IBaseRepositoryInterface {
   email: string;
-  first_name?: string | null;
+  first_name: string;
   middle_name?: string | null;
   last_name?: string | null;
 }
@@ -24,7 +24,7 @@ export interface IUserWithOrgAndRole extends IRepositoryUserWithRole {
 
 export interface IUser extends IBaseRepositoryInterface {
   email: string;
-  first_name?: string | null;
+  first_name: string;
   middle_name?: string | null;
   last_name?: string | null;
   organization: Partial<IRepositoryOrganization> & IUserPassportOrg;

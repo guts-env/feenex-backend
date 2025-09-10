@@ -210,10 +210,11 @@ export interface UserOrganizations {
 export interface Users {
   created_at: Generated<Timestamp>;
   email: string;
-  first_name: string | null;
+  first_name: string;
   id: Generated<string>;
   last_name: string | null;
   middle_name: string | null;
+  profile_photo: string | null;
   updated_at: Generated<Timestamp>;
 }
 

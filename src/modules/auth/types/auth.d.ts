@@ -15,17 +15,23 @@ export interface IRepositoryAuth extends IBaseRepositoryInterface {
 }
 
 export interface IRegisterUserInput {
+  firstName: string;
+  lastName?: string;
+  middleName?: string;
   email: string;
   hashedPassword: string;
-  organizationName: string;
+  orgName: string;
   orgType: OrganizationType;
 }
 
-export interface IRegisterInvitedUserInput {
+export interface IRegisterInvitedUserInput
+  extends Omit<IRegisterUserInput, 'orgName' | 'orgType'> {
+  firstName: string;
+  lastName?: string;
+  middleName?: string;
   email: string;
   hashedPassword: string;
   orgId: string;
-  orgType: OrganizationType;
 }
 
 export interface IValidateUserInput {

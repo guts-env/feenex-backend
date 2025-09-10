@@ -22,9 +22,13 @@ export class InvitesRepository extends BaseRepository {
         'i.created_at',
         'i.updated_at',
         'u.id as created_by',
-        'u.email as created_by_email',
+        'u.first_name as created_by_first_name',
+        'u.last_name as created_by_last_name',
+        'u.middle_name as created_by_middle_name',
         'u2.id as updated_by',
-        'u2.email as updated_by_email',
+        'u2.first_name as updated_by_first_name',
+        'u2.last_name as updated_by_last_name',
+        'u2.middle_name as updated_by_middle_name',
       ]);
   }
 
@@ -39,11 +43,15 @@ export class InvitesRepository extends BaseRepository {
             ...result,
             created_by: {
               id: result.created_by,
-              email: result.created_by_email,
+              first_name: result.created_by_first_name,
+              last_name: result.created_by_last_name,
+              middle_name: result.created_by_middle_name,
             },
             updated_by: {
               id: result.updated_by,
-              email: '',
+              first_name: result.updated_by_first_name,
+              last_name: result.updated_by_last_name,
+              middle_name: result.updated_by_middle_name,
             },
           }
         : undefined;
@@ -56,9 +64,7 @@ export class InvitesRepository extends BaseRepository {
 
   async findByToken(token: string): Promise<IRepositoryInvite | undefined> {
     try {
-      const result = await this.db
-        .selectFrom('invites')
-        .selectAll()
+      const result = await this.baseQuery
         .where('token', '=', token)
         .executeTakeFirst();
 
@@ -67,11 +73,15 @@ export class InvitesRepository extends BaseRepository {
             ...result,
             created_by: {
               id: result.created_by,
-              email: '',
+              first_name: result.created_by_first_name,
+              last_name: result.created_by_last_name,
+              middle_name: result.created_by_middle_name,
             },
             updated_by: {
               id: result.updated_by,
-              email: '',
+              first_name: result.updated_by_first_name,
+              last_name: result.updated_by_last_name,
+              middle_name: result.updated_by_middle_name,
             },
           }
         : undefined;

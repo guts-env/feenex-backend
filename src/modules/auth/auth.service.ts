@@ -40,7 +40,15 @@ export class AuthService {
   ) {}
 
   async register(dto: UserRegisterDto): Promise<void> {
-    const { email, password, orgType, organizationName } = dto;
+    const {
+      email,
+      password,
+      orgType,
+      orgName,
+      firstName,
+      lastName,
+      middleName,
+    } = dto;
 
     const existingUser = await this.userService.findByEmail(email, true);
     if (existingUser) {
@@ -49,7 +57,7 @@ export class AuthService {
       });
     }
 
-    if (orgType === 'business' && !organizationName) {
+    if (orgType === 'business' && !orgName) {
       throw new BadRequestException({
         message: 'Business name is required.',
       });
@@ -57,15 +65,17 @@ export class AuthService {
 
     const personalOrgName = email.split('@')[0];
 
-    const businessName =
-      orgType === 'business' ? organizationName : personalOrgName;
+    const businessName = orgType === 'business' ? orgName : personalOrgName;
 
     const hashedPassword = await this.passwordService.hash(password);
 
     const registrationPayload = {
+      firstName,
+      lastName,
+      middleName,
       email,
       hashedPassword,
-      organizationName: businessName,
+      orgName: businessName,
       orgType,
     };
 
@@ -73,7 +83,8 @@ export class AuthService {
   }
 
   async registerInvitedUser(dto: RegisterInvitedUserDto) {
-    const { email, password, inviteToken } = dto;
+    const { email, password, inviteToken, firstName, lastName, middleName } =
+      dto;
 
     const invite = await this.inviteService.findByToken(inviteToken);
     if (!invite) {
@@ -120,6 +131,9 @@ export class AuthService {
 
     const hashedPassword = await this.passwordService.hash(password);
     const registrationPayload = {
+      firstName,
+      lastName,
+      middleName,
       email,
       hashedPassword,
       orgId: invite.organization_id,
