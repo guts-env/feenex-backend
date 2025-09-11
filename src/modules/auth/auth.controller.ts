@@ -122,6 +122,10 @@ export class AuthController {
     }
 
     this.clearRefreshTokenCookie(res);
+
+    res.json({
+      message: 'OK',
+    });
   }
 
   @Authenticated()

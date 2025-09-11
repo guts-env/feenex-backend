@@ -44,7 +44,9 @@ import { RedisModule } from '@/database/redis.module';
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>(JWT_SECRET_CONFIG_KEY),
         signOptions: {
-          expiresIn: configService.get<string>(JWT_EXPIRATION_TIME_CONFIG_KEY),
+          expiresIn: Number(
+            configService.get<number>(JWT_EXPIRATION_TIME_CONFIG_KEY),
+          ),
         },
       }),
       inject: [ConfigService],
