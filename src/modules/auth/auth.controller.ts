@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Patch,
@@ -85,7 +86,7 @@ export class AuthController {
     });
   }
 
-  @Post(ModuleRoutes.Auth.Paths.Refresh)
+  @Get(ModuleRoutes.Auth.Paths.Refresh)
   @HttpCode(HttpStatus.OK)
   async refresh(
     @Request() req: IAuthenticatedRequest,

@@ -37,7 +37,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('first_name', 'varchar(50)', (col) => col.notNull())
     .addColumn('middle_name', 'varchar(50)')
     .addColumn('last_name', 'varchar(50)')
-    .addColumn('profile_picture', 'varchar(255)')
+    .addColumn('profile_photo', 'varchar(255)')
     .addColumn('created_at', 'timestamptz', (col) =>
       col.notNull().defaultTo(sql`now()`),
     )

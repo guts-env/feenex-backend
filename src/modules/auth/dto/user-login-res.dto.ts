@@ -4,10 +4,22 @@ import UserOrganizationResDto from '@/common/modules/user-organization/dto/base-
 
 class UserLoginDto {
   @Expose()
-  sub!: string;
+  id!: string;
 
   @Expose()
   email!: string;
+
+  @Expose()
+  firstName!: string;
+
+  @Expose()
+  middleName?: string;
+
+  @Expose()
+  lastName?: string;
+
+  @Expose()
+  profilePhoto?: string;
 
   @Expose()
   @Type(() => RoleResDto)

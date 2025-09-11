@@ -1,17 +1,13 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export default class ResetPasswordDto {
-  @IsNotEmpty()
-  @IsEmail()
-  email!: string;
-
-  @IsNotEmpty()
-  @IsString()
+  @IsNotEmpty({ message: 'New password is required.' })
+  @IsString({ message: 'New password contains invalid characters.' })
   @MinLength(8)
   newPassword!: string;
 
-  @IsNotEmpty()
-  @IsString()
+  @IsNotEmpty({ message: 'Invalid transaction.' })
+  @IsString({ message: 'Invalid transaction.' })
   @MinLength(32)
   resetToken!: string;
 }

@@ -12,7 +12,17 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(email: string, password: string): Promise<IUserPassport> {
+  async validate(
+    email: string,
+    password: string,
+  ): Promise<
+    IUserPassport & {
+      first_name: string;
+      middle_name?: string | null;
+      last_name?: string | null;
+      profile_photo?: string | null;
+    }
+  > {
     const { user } = await this.authService.validateUser({ email, password });
 
     if (!user) {
@@ -22,6 +32,10 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     const userPassport = {
       sub: user.id,
       email: user.email,
+      first_name: user.first_name,
+      middle_name: user.middle_name,
+      last_name: user.last_name,
+      profile_photo: user.profile_photo,
       organization: {
         id: user.organization.id,
         name: user.organization.name,

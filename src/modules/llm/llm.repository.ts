@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BaseRepository } from '@/common/modules/base/base.repository';
-import { IExtractedData } from './types/llm';
-import { ProcessingStatus } from '@/database/types/db';
+import { type IExtractedData } from '@/modules/llm/types/llm';
+import { type ProcessingStatus } from '@/database/types/db';
 
 @Injectable()
 export class LLmRepository extends BaseRepository {

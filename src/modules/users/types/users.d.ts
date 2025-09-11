@@ -9,6 +9,7 @@ export interface IBaseRepositoryUser extends IBaseRepositoryInterface {
   first_name: string;
   middle_name?: string | null;
   last_name?: string | null;
+  profile_photo?: string | null;
 }
 
 export interface IRepositoryUserWithRole extends IBaseRepositoryUser {
@@ -22,11 +23,7 @@ export interface IUserWithOrgAndRole extends IRepositoryUserWithRole {
   org_type: OrganizationType;
 }
 
-export interface IUser extends IBaseRepositoryInterface {
-  email: string;
-  first_name: string;
-  middle_name?: string | null;
-  last_name?: string | null;
+export interface IUser extends IBaseRepositoryUser {
   organization: Partial<IRepositoryOrganization> & IUserPassportOrg;
   role: IRole;
 }

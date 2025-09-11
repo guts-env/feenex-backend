@@ -1,10 +1,4 @@
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  MinLength,
-} from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 
 export default class AcceptInviteDto {
   @IsNotEmpty()
@@ -21,16 +15,12 @@ export default class AcceptInviteDto {
   lastName?: string;
 
   @IsNotEmpty()
-  @IsEmail()
-  email!: string;
-
-  @IsNotEmpty()
   @IsString()
   @MinLength(8)
   password!: string;
 
-  @IsNotEmpty()
-  @IsString()
-  @MinLength(32)
+  @IsNotEmpty({ message: 'Invalid invite.' })
+  @IsString({ message: 'Invalid invite.' })
+  @MinLength(32, { message: 'Invalid invite.' })
   inviteToken!: string;
 }

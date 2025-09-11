@@ -198,6 +198,16 @@ export class AuthRepository extends BaseRepository {
     return this.transformUserWithAuth(result);
   }
 
+  async findAuthByResetPasswordToken(token: string) {
+    const result = await this.db
+      .selectFrom('auth')
+      .selectAll()
+      .where('reset_password_token', '=', token)
+      .executeTakeFirst();
+
+    return result;
+  }
+
   private get userWithAuthBaseQuery() {
     return this.db
       .selectFrom('users as u')

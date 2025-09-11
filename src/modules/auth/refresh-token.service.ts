@@ -12,7 +12,7 @@ import { type IStoredRefreshToken } from '@/modules/auth/types/refresh-token';
 
 @Injectable()
 export class RefreshTokenService {
-  private readonly refreshTokenExpiration: string;
+  private readonly refreshTokenExpiration: number;
   private readonly redisClient: Redis;
 
   constructor(
@@ -21,9 +21,9 @@ export class RefreshTokenService {
   ) {
     this.redisClient = this.redisService.getClient();
 
-    this.refreshTokenExpiration = this.configService.get<string>(
-      REFRESH_TOKEN_EXPIRATION_TIME_CONFIG_KEY,
-    )!;
+    this.refreshTokenExpiration = Number(
+      this.configService.get<string>(REFRESH_TOKEN_EXPIRATION_TIME_CONFIG_KEY),
+    );
   }
 
   async generateRefreshToken(userId: string): Promise<string> {
@@ -50,7 +50,8 @@ export class RefreshTokenService {
     await this.redisClient.sadd(userTokensKey, tokenId);
     await this.redisClient.expire(userTokensKey, this.refreshTokenExpiration);
 
-    return `${userId}.${tokenId}.${token}`;
+    const finalToken = `${userId}.${tokenId}.${token}`;
+    return finalToken;
   }
 
   async validateRefreshToken(
@@ -72,9 +73,7 @@ export class RefreshTokenService {
       });
     }
 
-    const hashedToken = this.hashToken(token);
     const redisKey = `${REDIS_REFRESH_TOKEN_KEY}:${userId}:${tokenId}`;
-
     const storedData = await this.redisClient.get(redisKey);
 
     if (!storedData) {
@@ -84,6 +83,8 @@ export class RefreshTokenService {
     }
 
     const storedToken = JSON.parse(storedData) as IStoredRefreshToken;
+
+    const hashedToken = this.hashToken(token);
 
     if (
       storedToken.hashedToken !== hashedToken ||
@@ -97,10 +98,11 @@ export class RefreshTokenService {
     return storedToken;
   }
 
-  async rotateRefreshToken(oldRefreshToken: string): Promise<string> {
-    const tokenData = await this.validateRefreshToken(oldRefreshToken);
+  async rotateRefreshToken(
+    tokenData: IStoredRefreshToken,
+    oldRefreshToken: string,
+  ): Promise<string> {
     await this.revokeRefreshToken(oldRefreshToken);
-
     const newToken = await this.generateRefreshToken(tokenData.userId);
     return newToken;
   }

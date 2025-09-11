@@ -53,8 +53,8 @@ export type IUserPassportOrg = Pick<
 >;
 
 export interface IUserPassport {
-  email: string;
   sub: string;
+  email: string;
   organization: IUserPassportOrg;
   role: IRole;
 }
@@ -67,7 +67,12 @@ export type IAuthResponse = {
 export type IHeadersWithOrg = Headers & { [ORGANIZATION_ID_HEADER]: string };
 export type IRequestWithOrgHeader = Request & IHeadersWithOrg;
 export interface IAuthenticatedRequest extends IRequestWithOrgHeader {
-  user: IUserPassport;
+  user: IUserPassport & {
+    first_name: string;
+    middle_name?: string | null;
+    last_name?: string | null;
+    profile_photo?: string | null;
+  };
 }
 
 export type IExtractedOrgHeader =

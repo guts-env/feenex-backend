@@ -6,8 +6,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { createHash, randomBytes } from 'crypto';
 import { plainToInstance } from 'class-transformer';
+import { RESET_PASSWORD_REDIRECT_URL_CONFIG_KEY } from '@/config/keys.config';
 import { UsersService } from '@/modules/users/users.service';
 import { PasswordService } from '@/modules/auth/password.service';
 import { OrganizationsService } from '@/modules/organizations/organizations.service';
@@ -29,6 +31,8 @@ import { type IUser } from '@/modules/users/types/users';
 
 @Injectable()
 export class AuthService {
+  private readonly resetPasswordRedirectUrl: string;
+
   constructor(
     private readonly inviteService: InvitesService,
     private readonly jwtService: JwtService,
@@ -37,7 +41,12 @@ export class AuthService {
     private readonly userService: UsersService,
     private readonly refreshTokenService: RefreshTokenService,
     private readonly authRepository: AuthRepository,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    this.resetPasswordRedirectUrl = this.configService.get<string>(
+      RESET_PASSWORD_REDIRECT_URL_CONFIG_KEY,
+    )!;
+  }
 
   async register(dto: UserRegisterDto): Promise<void> {
     const {
@@ -83,19 +92,12 @@ export class AuthService {
   }
 
   async registerInvitedUser(dto: RegisterInvitedUserDto) {
-    const { email, password, inviteToken, firstName, lastName, middleName } =
-      dto;
+    const { password, inviteToken, firstName, lastName, middleName } = dto;
 
     const invite = await this.inviteService.findByToken(inviteToken);
     if (!invite) {
       throw new NotFoundException({
         message: 'No valid invite found.',
-      });
-    }
-
-    if (invite.email !== email) {
-      throw new BadRequestException({
-        message: 'Email does not match invite.',
       });
     }
 
@@ -113,7 +115,7 @@ export class AuthService {
       });
     }
 
-    const existingUser = await this.userService.findByEmail(email, true);
+    const existingUser = await this.userService.findByEmail(invite.email, true);
     if (existingUser) {
       throw new ConflictException({
         message: 'Email is already in use.',
@@ -134,7 +136,7 @@ export class AuthService {
       firstName,
       lastName,
       middleName,
-      email,
+      email: invite.email,
       hashedPassword,
       orgId: invite.organization_id,
       orgType: organization.type,
@@ -171,7 +173,14 @@ export class AuthService {
     return { user: result.user, auth: result.auth };
   }
 
-  async authenticate(user: IUserPassport): Promise<UserLoginResDto> {
+  async authenticate(
+    user: IUserPassport & {
+      first_name: string;
+      middle_name?: string | null;
+      last_name?: string | null;
+      profile_photo?: string | null;
+    },
+  ): Promise<UserLoginResDto> {
     const accessToken = this.jwtService.sign(user);
     const refreshToken = await this.refreshTokenService.generateRefreshToken(
       user.sub,
@@ -180,17 +189,29 @@ export class AuthService {
     return plainToInstance(UserLoginResDto, {
       accessToken,
       refreshToken,
-      user,
+      user: {
+        id: user.sub,
+        email: user.email,
+        firstName: user.first_name,
+        middleName: user.middle_name,
+        lastName: user.last_name,
+        profilePhoto: user.profile_photo,
+        role: user.role,
+        organization: user.organization,
+      },
     });
   }
 
   async refreshAccessToken(
     refreshToken: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    const newRefreshToken =
-      await this.refreshTokenService.rotateRefreshToken(refreshToken);
     const tokenData =
       await this.refreshTokenService.validateRefreshToken(refreshToken);
+
+    const newRefreshToken = await this.refreshTokenService.rotateRefreshToken(
+      tokenData,
+      refreshToken,
+    );
 
     const result = await this.authRepository.findUserWithAuthByUserId(
       tokenData.userId,
@@ -235,7 +256,7 @@ export class AuthService {
     }
 
     const resetToken = this.generateResetPasswordToken();
-    const resetLink = `https://feenex.com/auth/reset-password?prt=${resetToken}`;
+    const resetLink = `${this.resetPasswordRedirectUrl}?prt=${resetToken}`;
 
     const hashedToken = this.hashToken(resetToken);
     await this.authRepository.requestResetPassword(result.auth.id, hashedToken);
@@ -257,14 +278,14 @@ export class AuthService {
   }
 
   async resetPassword(dto: ResetPasswordDto) {
-    const { email, newPassword, resetToken } = dto;
+    const { newPassword, resetToken } = dto;
 
-    const result = await this.authRepository.findUserWithAuthByEmail(email);
-    if (!result) {
-      throw new NotFoundException({ message: 'User does not exist.' });
+    const hashedToken = this.hashToken(resetToken);
+    const auth =
+      await this.authRepository.findAuthByResetPasswordToken(hashedToken);
+    if (!auth) {
+      throw new NotFoundException({ message: 'Invalid reset request.' });
     }
-
-    const { auth } = result;
 
     if (!auth.reset_password_token || !auth.reset_password_token_expires_at) {
       throw new BadRequestException({
@@ -275,13 +296,6 @@ export class AuthService {
     if (auth.reset_password_token_expires_at < new Date()) {
       throw new BadRequestException({
         message: 'Reset password request has expired.',
-      });
-    }
-
-    const hashedToken = this.hashToken(resetToken);
-    if (auth.reset_password_token !== hashedToken) {
-      throw new BadRequestException({
-        message: 'Invalid reset token.',
       });
     }
 
