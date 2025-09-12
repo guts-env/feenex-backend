@@ -4,6 +4,10 @@ import { ModuleRoutes } from '@/common/constants/routes';
 import { CurrentOrganization } from '@/common/decorators/current-org.decorator';
 import { UploadService } from '@/modules/upload/upload.service';
 import PresignedUploadDto from '@/modules/upload/dto/presigned-upload.dto';
+import {
+  PresignedDownloadDto,
+  PresignedDownloadResDto,
+} from '@/modules/upload/dto/presigned-download.dto';
 import { AllRoles } from '@/modules/auth/decorators/roles.decorator';
 import { RoleProtected } from '@/modules/auth/decorators/auth.decorator';
 
@@ -14,12 +18,25 @@ export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 
   @Post(ModuleRoutes.Upload.Paths.Presigned)
-  @Throttle({ default: { limit: 5, ttl: 60 } })
+  @Throttle({ default: { limit: 20, ttl: 60 } })
   @HttpCode(HttpStatus.OK)
   createPresignedUrl(
     @Body() dto: PresignedUploadDto,
     @CurrentOrganization('id') orgId: string,
-  ) {
+  ): Promise<string> {
     return this.uploadService.createPresignedUrl(dto, orgId);
+  }
+
+  @Post(ModuleRoutes.Upload.Paths.DownloadPresigned)
+  @Throttle({ default: { limit: 20, ttl: 60 } })
+  @HttpCode(HttpStatus.OK)
+  getPresignedUrl(
+    @Body() dto: PresignedDownloadDto,
+    @CurrentOrganization('id') orgId: string,
+  ): Promise<PresignedDownloadResDto[]> {
+    return this.uploadService.createMultiplePresignedDownloadUrls(
+      dto.keys,
+      orgId,
+    );
   }
 }

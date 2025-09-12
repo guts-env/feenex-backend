@@ -40,6 +40,7 @@ export const ModuleRoutes = {
     Main: 'upload',
     Paths: {
       Presigned: 'presigned',
+      DownloadPresigned: 'download-presigned',
     },
   },
   Users: {

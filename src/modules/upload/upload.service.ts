@@ -17,7 +17,9 @@ import {
   GENERATE_PRESIGNED_URL_ERROR,
 } from '@/common/constants/logger';
 import PresignedUploadDto from '@/modules/upload/dto/presigned-upload.dto';
+import { PresignedDownloadResDto } from '@/modules/upload/dto/presigned-download.dto';
 import { type IAwsConfig } from '@/common/types/config';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class UploadService {
@@ -88,7 +90,11 @@ export class UploadService {
 
       const filename = key.split('/').pop()!;
 
-      return { key, url: presignedUrl, filename };
+      return plainToInstance(PresignedDownloadResDto, {
+        key,
+        url: presignedUrl,
+        filename,
+      });
     } catch (error) {
       this.logger.error(GENERATE_PRESIGNED_URL_ERROR, this.formatError(error));
       throw new InternalServerErrorException({
@@ -100,7 +106,7 @@ export class UploadService {
   async createMultiplePresignedDownloadUrls(
     keys: string[],
     orgId: string,
-  ): Promise<{ key: string; url: string; filename: string }[]> {
+  ): Promise<PresignedDownloadResDto[]> {
     try {
       const downloadPromises = keys.map((key) =>
         this.createPresignedGetUrl(key, orgId),
@@ -108,7 +114,7 @@ export class UploadService {
 
       const files = await Promise.all(downloadPromises);
 
-      return files;
+      return plainToInstance(PresignedDownloadResDto, files);
     } catch (error) {
       this.logger.error(GENERATE_PRESIGNED_URL_ERROR, this.formatError(error));
       throw new InternalServerErrorException({

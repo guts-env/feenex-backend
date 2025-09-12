@@ -15,6 +15,10 @@ import { type IUserPassport } from '@/modules/auth/types/auth';
 
 @WebSocketGateway({
   namespace: ModuleRoutes.Expenses.Main,
+  cors: {
+    origin: process.env.CORS_ORIGIN,
+    credentials: true,
+  },
 })
 export default class ExpenseEventsGateway
   implements OnGatewayConnection, OnGatewayDisconnect
