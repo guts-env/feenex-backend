@@ -11,15 +11,17 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { ConfigService } from '@nestjs/config';
+import { plainToInstance } from 'class-transformer';
 import { AWS_CONFIG_KEY } from '@/config/keys.config';
 import {
   FILE_KEY_DOES_NOT_START_WITH_ORG_ID,
   GENERATE_PRESIGNED_URL_ERROR,
 } from '@/common/constants/logger';
-import PresignedUploadDto from '@/modules/upload/dto/presigned-upload.dto';
+import PresignedUploadDto, {
+  PresignedUploadResDto,
+} from '@/modules/upload/dto/presigned-upload.dto';
 import { PresignedDownloadResDto } from '@/modules/upload/dto/presigned-download.dto';
 import { type IAwsConfig } from '@/common/types/config';
-import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class UploadService {
@@ -43,11 +45,17 @@ export class UploadService {
   async createPresignedUrl(
     dto: PresignedUploadDto,
     orgId: string,
-  ): Promise<string> {
+  ): Promise<PresignedUploadResDto> {
     try {
+      const key = this.generateKey(
+        orgId,
+        dto.key,
+        `${Date.now()}-${dto.filename}`,
+      );
+
       const command = new PutObjectCommand({
         Bucket: this.bucket,
-        Key: this.generateKey(orgId, dto.key, `${Date.now()}-${dto.filename}`),
+        Key: key,
         ContentType: dto.contentType,
       });
 
@@ -55,7 +63,10 @@ export class UploadService {
         expiresIn: this.presignedUrlExpiry,
       });
 
-      return presignedUrl;
+      return plainToInstance(PresignedUploadResDto, {
+        key,
+        url: presignedUrl,
+      });
     } catch (error) {
       this.logger.error(GENERATE_PRESIGNED_URL_ERROR, this.formatError(error));
       throw new InternalServerErrorException({
@@ -68,12 +79,14 @@ export class UploadService {
     key: string,
     orgId: string,
   ): Promise<{ key: string; url: string; filename: string }> {
+    console.log(key);
     try {
       if (!key.startsWith(orgId)) {
         this.logger.error(FILE_KEY_DOES_NOT_START_WITH_ORG_ID, {
           key,
           orgId,
         });
+
         throw new ForbiddenException({
           message: 'Key does not start with orgId',
         });
@@ -125,7 +138,12 @@ export class UploadService {
 
   private generateKey(orgId: string, key: string, filename: string) {
     const parts = [orgId, key, filename]
-      .map((p) => p.trim().replace(/^\/+|\/+$/g, ''))
+      .map((p) =>
+        p
+          .trim()
+          .replace(/^\/+|\/+$/g, '')
+          .replace(/\s+/g, '-'),
+      )
       .filter(Boolean);
     return parts.join('/');
   }

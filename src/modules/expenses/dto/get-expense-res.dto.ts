@@ -46,14 +46,6 @@ export default class GetExpenseResDto {
   date!: string;
 
   @Expose()
-  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.created_at)
-  createdAt!: Date;
-
-  @Expose()
-  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.updated_at)
-  updatedAt!: Date;
-
-  @Expose()
   description?: string;
 
   @Expose()
@@ -69,11 +61,6 @@ export default class GetExpenseResDto {
   otherDetails?: ExpenseOtherDetailResDto[];
 
   @Expose()
-  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.verified_by)
-  @Type(() => UserResDto)
-  verifiedBy?: UserResDto;
-
-  @Expose()
   @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.created_by)
   @Type(() => UserResDto)
   createdBy!: UserResDto;
@@ -82,4 +69,21 @@ export default class GetExpenseResDto {
   @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.updated_by)
   @Type(() => UserResDto)
   updatedBy!: UserResDto;
+
+  @Expose()
+  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.verified_by)
+  @Type(() => UserResDto)
+  verifiedBy?: UserResDto;
+
+  @Expose()
+  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.created_at)
+  createdAt!: Date;
+
+  @Expose()
+  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.updated_at)
+  updatedAt!: Date;
+
+  @Expose()
+  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.verified_at)
+  verifiedAt?: Date;
 }

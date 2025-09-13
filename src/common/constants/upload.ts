@@ -13,7 +13,7 @@ export const ALLOWED_DOCUMENT_TYPES = [
   'application/vnd.ms-excel',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'text/csv',
-];
+] as const;
 
 export const ALLOWED_CONTENT_TYPES = [
   ...ALLOWED_IMAGE_TYPES,

@@ -37,6 +37,7 @@ export interface IBaseRepositoryExpense extends IBaseRepositoryInterface {
     IBaseRepositoryUser,
     'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'email'
   > | null;
+  verified_at?: Date | null;
 }
 
 export interface IRepositoryExpenseWithOrg extends IBaseRepositoryExpense {

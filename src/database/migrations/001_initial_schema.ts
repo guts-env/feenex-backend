@@ -331,7 +331,10 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('processing_status', sql`processing_status`, (col) =>
       col.notNull().defaultTo('processing'),
     )
-    .addColumn('verified_by', 'uuid', (col) => col.references('users.id'))
+    .addColumn('verified_by', 'uuid', (col) =>
+      col.references('users.id').onDelete('set null'),
+    )
+    .addColumn('verified_at', 'timestamptz')
     .addColumn('import_id', 'uuid', (col) => col.references('imports.id'))
     .addColumn('created_at', 'timestamptz', (col) =>
       col.notNull().defaultTo(sql`now()`),
@@ -343,7 +346,7 @@ export async function up(db: Kysely<any>): Promise<void> {
       col.notNull().references('users.id').onDelete('set null'),
     )
     .addColumn('updated_by', 'uuid', (col) =>
-      col.notNull().references('users.id'),
+      col.notNull().references('users.id').onDelete('set null'),
     )
     .execute();
 

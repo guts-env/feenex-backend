@@ -10,7 +10,11 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { type ExpenseSource, type CurrencyCode } from '@/database/types/db';
+import {
+  type ExpenseSource,
+  type CurrencyCode,
+  type ExpenseStatus,
+} from '@/database/types/db';
 
 export class ExpenseItemDto {
   @IsNotEmpty()
@@ -40,6 +44,10 @@ class BaseExpenseDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsNotEmpty()
+  @IsIn(['draft', 'pending', 'rejected', 'verified'])
+  status!: ExpenseStatus;
 
   @IsOptional()
   @ArrayNotEmpty()

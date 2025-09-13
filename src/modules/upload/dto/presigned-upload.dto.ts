@@ -17,6 +17,7 @@ import {
   IsPositive,
 } from 'class-validator';
 import { type IAllowedContentTypes } from '@/common/types/common';
+import { Expose } from 'class-transformer';
 
 function IsContentTypeValid(validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {
@@ -26,20 +27,22 @@ function IsContentTypeValid(validationOptions?: ValidationOptions) {
       propertyName: propertyName,
       options: validationOptions,
       validator: {
-        validate(value: string, args: ValidationArguments) {
+        validate(contentType: string, args: ValidationArguments) {
           const object = args.object as PresignedUploadDto;
           const key = object.key;
 
-          if (!key || !value) {
+          if (!key || !contentType) {
             return false;
           }
 
           switch (key) {
             case FileUploadKeysEnum.RECEIPTS:
-              return (ALLOWED_IMAGE_TYPES as readonly string[]).includes(value);
+              return (ALLOWED_IMAGE_TYPES as readonly string[]).includes(
+                contentType,
+              );
             case FileUploadKeysEnum.IMPORTS:
               return (ALLOWED_DOCUMENT_TYPES as readonly string[]).includes(
-                value,
+                contentType,
               );
             default:
               return false;
@@ -71,17 +74,17 @@ function IsFileSizeValid(validationOptions?: ValidationOptions) {
       propertyName: propertyName,
       options: validationOptions,
       validator: {
-        validate(value: number, args: ValidationArguments) {
+        validate(filesize: number, args: ValidationArguments) {
           const object = args.object as PresignedUploadDto;
           const key = object.key;
 
-          if (!key || !value) {
+          if (!key || !filesize) {
             return false;
           }
 
           const maxSize = FILE_SIZE_LIMITS[key];
 
-          return value > 0 && value <= maxSize;
+          return filesize > 0 && filesize <= maxSize;
         },
         defaultMessage(args: ValidationArguments) {
           const object = args.object as PresignedUploadDto;
@@ -130,5 +133,13 @@ export default class PresignedUploadDto {
   @IsNumber({}, { message: 'File size must be a number' })
   @IsPositive({ message: 'Invalid file size' })
   @IsFileSizeValid()
-  fileSize!: number;
+  filesize!: number;
+}
+
+export class PresignedUploadResDto {
+  @Expose()
+  key!: string;
+
+  @Expose()
+  url!: string;
 }

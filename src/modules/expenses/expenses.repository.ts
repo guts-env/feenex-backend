@@ -33,6 +33,7 @@ export class ExpensesRepository extends BaseRepository {
       'e.photos',
       'e.created_at',
       'e.updated_at',
+      'e.verified_at',
       'c.id as category_id',
       'c.name as category_name',
       'u.id as created_by',
@@ -79,6 +80,7 @@ export class ExpensesRepository extends BaseRepository {
       status: row['status'] as ExpenseStatus,
       created_at: row['created_at'] as Date,
       updated_at: row['updated_at'] as Date,
+      verified_at: row['verified_at'] as Date | null,
       category: {
         id: row['category_id'] as string,
         name: row['category_name'] as string,
@@ -236,7 +238,11 @@ export class ExpensesRepository extends BaseRepository {
   async create(
     orgId: string,
     userId: string,
-    payload: CreateExpenseDto & { processingStatus: ProcessingStatus },
+    payload: CreateExpenseDto & {
+      processingStatus: ProcessingStatus;
+      verifiedBy?: string;
+      verifiedAt?: Date;
+    },
   ): Promise<{
     id: string;
     organization_id: string;
@@ -257,6 +263,7 @@ export class ExpensesRepository extends BaseRepository {
       llmResultId,
       source,
       processingStatus,
+      status,
     } = payload;
 
     try {
@@ -274,7 +281,7 @@ export class ExpensesRepository extends BaseRepository {
           items: items ? JSON.stringify(items) : null,
           other_details: otherDetails ? JSON.stringify(otherDetails) : null,
           source,
-          status: 'pending',
+          status,
           processing_status: processingStatus,
           photos: photos || null,
           ocr_result_id: ocrResultId || null,

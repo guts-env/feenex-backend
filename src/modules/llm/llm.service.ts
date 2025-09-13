@@ -12,7 +12,7 @@ import { type IExtractedData } from '@/modules/llm/types/llm';
 @Injectable()
 export class LlmService {
   private client: OpenAI;
-  private readonly model = 'gpt-4o-mini';
+  private readonly model = 'gpt-3.5-turbo';
   private readonly logger = new Logger(LlmService.name);
 
   constructor(
@@ -64,6 +64,7 @@ export class LlmService {
         If there's ANY discrepancy, prioritize the calculated sum from line items over the stated total
         The "amount" field should reflect the sum of all line items (price * quantity), not the final receipt total
         Final receipt totals may include rounding, fees, or charges not reflected in line items
+        If there is no merchant name, set it to "Merchant Name"
 
         OTHER DETAILS RULES:
         Include ONLY these critical business fields if present:
@@ -78,7 +79,7 @@ export class LlmService {
 
         ${ocrText}
 
-        Return only valid JSON. Use null for missing data.
+        Return only valid JSON.
     `;
 
       const startTime = Date.now();
@@ -88,7 +89,7 @@ export class LlmService {
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' },
         temperature: 0.1,
-        max_completion_tokens: 1000,
+        max_completion_tokens: 2000,
       });
 
       const endTime = Date.now();

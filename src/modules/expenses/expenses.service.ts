@@ -31,7 +31,11 @@ export class ExpensesService {
   async createExpense(
     orgId: string,
     userId: string,
-    payload: CreateExpenseDto & { processingStatus: ProcessingStatus },
+    payload: CreateExpenseDto & {
+      processingStatus: ProcessingStatus;
+      verifiedBy?: string;
+      verifiedAt?: Date;
+    },
   ): Promise<{
     id: string;
     organization_id: string;
@@ -52,11 +56,25 @@ export class ExpensesService {
     userId: string,
     dto: CreateManualExpenseDto,
   ) {
-    const expense = await this.createExpense(orgId, userId, {
+    const payload: CreateExpenseDto & {
+      processingStatus: ProcessingStatus;
+      verifiedBy?: string;
+      verifiedAt?: Date;
+    } = {
       ...dto,
       source: 'manual',
       processingStatus: 'completed',
-    });
+    };
+
+    if (dto.status === 'verified') {
+      payload.status = 'verified';
+      Object.assign(payload, {
+        verifiedBy: userId,
+        verifiedAt: new Date(),
+      });
+    }
+
+    const expense = await this.createExpense(orgId, userId, payload);
 
     this.expensesEventsGateway.notifyCreatedExpense(orgId, userId, expense);
 

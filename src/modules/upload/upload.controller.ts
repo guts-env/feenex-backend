@@ -3,7 +3,9 @@ import { Throttle } from '@nestjs/throttler';
 import { ModuleRoutes } from '@/common/constants/routes';
 import { CurrentOrganization } from '@/common/decorators/current-org.decorator';
 import { UploadService } from '@/modules/upload/upload.service';
-import PresignedUploadDto from '@/modules/upload/dto/presigned-upload.dto';
+import PresignedUploadDto, {
+  PresignedUploadResDto,
+} from '@/modules/upload/dto/presigned-upload.dto';
 import {
   PresignedDownloadDto,
   PresignedDownloadResDto,
@@ -23,7 +25,7 @@ export class UploadController {
   createPresignedUrl(
     @Body() dto: PresignedUploadDto,
     @CurrentOrganization('id') orgId: string,
-  ): Promise<string> {
+  ): Promise<PresignedUploadResDto> {
     return this.uploadService.createPresignedUrl(dto, orgId);
   }
 
