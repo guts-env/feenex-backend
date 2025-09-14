@@ -97,6 +97,8 @@ export class ExpensesService {
         ...dto,
       });
 
+      this.expensesEventsGateway.notifyCreatedExpense(orgId, userId, expense);
+
       await this.queueService.addExpenseJob(expense.id, orgId, userId, dto);
     } catch (error) {
       this.logger.error(error);
@@ -144,10 +146,24 @@ export class ExpensesService {
       orgId,
     );
 
+    this.expensesEventsGateway.notifyVerifiedExpense(orgId, userId, {
+      id: verifiedExpense.id,
+      organization_id: orgId,
+      merchant_name: verifiedExpense.merchant_name,
+      amount: Number(verifiedExpense.amount),
+    });
+
     return plainToInstance(GetExpenseResDto, verifiedExpense);
   }
 
-  deleteExpense(id: string, orgId: string) {
-    return this.expensesRepository.delete(id, orgId);
+  async deleteExpense(id: string, userId: string, orgId: string) {
+    const deletedExpense = await this.expensesRepository.delete(id, orgId);
+
+    this.expensesEventsGateway.notifyDeletedExpense(orgId, userId, {
+      id,
+      organization_id: orgId,
+    });
+
+    return plainToInstance(GetExpenseResDto, deletedExpense);
   }
 }

@@ -100,6 +100,7 @@ export interface Expenses {
   updated_at: Generated<Timestamp>;
   updated_by: string;
   user_id: string;
+  verified_at: Timestamp | null;
   verified_by: string | null;
 }
 

@@ -381,6 +381,7 @@ export class ExpensesRepository extends BaseRepository {
           verified_by: userId,
           updated_by: userId,
           updated_at: new Date(),
+          verified_at: new Date(),
         })
         .where('id', '=', id)
         .where('organization_id', '=', orgId)

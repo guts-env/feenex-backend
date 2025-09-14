@@ -108,8 +108,12 @@ export class ExpensesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteExpense(
     @Param('id') id: string,
-    @CurrentOrganization('id') orgId: string,
+    @Request() req: IAuthenticatedRequest,
   ) {
-    return this.expensesService.deleteExpense(id, orgId);
+    return this.expensesService.deleteExpense(
+      id,
+      req.user.sub,
+      req.user.organization.id,
+    );
   }
 }

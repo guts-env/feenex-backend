@@ -85,7 +85,7 @@ export class ExpensesConsumer extends WorkerHost {
       },
     );
 
-    this.expensesEventsGateway.notifyCreatedExpense(orgId, userId, {
+    this.expensesEventsGateway.notifyProcessedExpense(orgId, userId, {
       id: createdAutoExpense.id,
       organization_id: orgId,
       merchant_name: createdAutoExpense.merchantName,

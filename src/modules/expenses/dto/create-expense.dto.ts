@@ -45,9 +45,9 @@ class BaseExpenseDto {
   @IsString()
   description?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsIn(['draft', 'pending', 'rejected', 'verified'])
-  status!: ExpenseStatus;
+  status?: ExpenseStatus;
 
   @IsOptional()
   @ArrayNotEmpty()

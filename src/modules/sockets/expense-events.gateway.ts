@@ -16,7 +16,7 @@ import { type IUserPassport } from '@/modules/auth/types/auth';
 @WebSocketGateway({
   namespace: ModuleRoutes.Expenses.Main,
   cors: {
-    origin: process.env.CORS_ORIGIN,
+    origin: true,
     credentials: true,
   },
 })
@@ -60,6 +60,78 @@ export default class ExpenseEventsGateway
       });
   }
 
+  notifyProcessedExpense(
+    orgId: string,
+    userId: string,
+    expense: {
+      id: string;
+      organization_id: string;
+      merchant_name: string;
+      amount: number;
+    },
+  ) {
+    if (orgId !== expense.organization_id) {
+      return;
+    }
+
+    this.server.to(`org:${orgId}`).emit(EXPENSE_EVENTS.PROCESSED, {
+      id: expense.id,
+      user: userId,
+      merchantName: expense.merchant_name,
+      amount: expense.amount,
+    });
+  }
+
+  notifyVerifiedExpense(
+    orgId: string,
+    userId: string,
+    expense: {
+      id: string;
+      organization_id: string;
+      merchant_name: string;
+      amount: number;
+    },
+  ) {
+    if (orgId !== expense.organization_id) {
+      return;
+    }
+
+    const creatorSocketIds = this.userSockets.get(userId) || new Set();
+
+    this.server
+      .to(`org:${orgId}`)
+      .except([...creatorSocketIds])
+      .emit(EXPENSE_EVENTS.VERIFIED, {
+        id: expense.id,
+        user: userId,
+        merchantName: expense.merchant_name,
+        amount: expense.amount,
+      });
+  }
+
+  notifyDeletedExpense(
+    orgId: string,
+    userId: string,
+    expense: {
+      id: string;
+      organization_id: string;
+    },
+  ) {
+    if (orgId !== expense.organization_id) {
+      return;
+    }
+
+    const creatorSocketIds = this.userSockets.get(userId) || new Set();
+
+    this.server
+      .to(`org:${orgId}`)
+      .except([...creatorSocketIds])
+      .emit(EXPENSE_EVENTS.DELETED, {
+        id: expense.id,
+        user: userId,
+      });
+  }
+
   async handleConnection(socket: Socket) {
     try {
       const token = socket.handshake.headers.authorization?.split(' ')[1];
@@ -84,6 +156,8 @@ export default class ExpenseEventsGateway
         this.userSockets.set(userId, new Set());
       }
       this.userSockets.get(userId)!.add(socket.id);
+
+      console.log(this.userSockets);
 
       await socket.join(`org:${orgId}`);
     } catch (error) {
