@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import * as nodemailer from 'nodemailer';
 import { join } from 'path';
 import { readFile } from 'fs/promises';
 import {
@@ -13,8 +14,10 @@ import { type IAwsConfig } from '@/common/types/config';
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private readonly enableEmailService: boolean;
-  private readonly sesClient: SESClient;
+  private readonly sesClient?: SESClient;
+  private readonly nodeMailerTransporter?: nodemailer.Transporter;
   private readonly sourceEmail: string;
+  private readonly isDevelopment: boolean;
   private readonly templatesPath = join(
     process.cwd(),
     'src',
@@ -25,14 +28,31 @@ export class EmailService {
   private templateCache: Map<string, string> = new Map();
 
   constructor(private readonly configService: ConfigService) {
-    const awsConfig = this.configService.get<IAwsConfig>(AWS_CONFIG_KEY)!;
+    this.isDevelopment =
+      this.configService.get<string>('NODE_ENV') === 'development';
 
-    this.sesClient = new SESClient({
-      region: awsConfig.region,
-      credentials: awsConfig.credentials,
-    });
-
-    this.sourceEmail = awsConfig.ses.sourceEmail;
+    if (this.isDevelopment) {
+      this.nodeMailerTransporter = nodemailer.createTransport({
+        host: 'smtp.sendgrid.net',
+        port: 587,
+        secure: false,
+        auth: {
+          user: 'apikey',
+          pass: this.configService.get<string>('SENDGRID_API_KEY'),
+        },
+      }) as nodemailer.Transporter;
+      this.sourceEmail = this.configService.get<string>(
+        'SENDGRID_FROM_EMAIL',
+        'noreply@feenex.com',
+      );
+    } else {
+      const awsConfig = this.configService.get<IAwsConfig>(AWS_CONFIG_KEY)!;
+      this.sesClient = new SESClient({
+        region: awsConfig.region,
+        credentials: awsConfig.credentials,
+      });
+      this.sourceEmail = awsConfig.ses.sourceEmail;
+    }
 
     this.enableEmailService = Boolean(
       Number(this.configService.get<string>(ENABLE_EMAIL_SERVICE_CONFIG_KEY)),
@@ -50,38 +70,18 @@ export class EmailService {
 
     const htmlTemplate = await this.getTemplate('welcome', 'html');
     const txtTemplate = await this.getTemplate('welcome', 'txt');
-
     const subject = 'FeeNex - Welcome to FeeNex!';
-    const html = htmlTemplate;
-    const plainText = txtTemplate;
 
-    const command = new SendEmailCommand({
-      Source: this.sourceEmail,
-      Destination: {
-        ToAddresses: [toEmail],
-      },
-      Message: {
-        Subject: {
-          Data: subject,
-          Charset: 'UTF-8',
-        },
-        Body: {
-          Text: {
-            Data: plainText,
-            Charset: 'UTF-8',
-          },
-          Html: {
-            Data: html,
-            Charset: 'UTF-8',
-          },
-        },
-      },
-    });
-
-    const result = await this.sesClient.send(command);
-    this.logger.log(
-      `Welcome email sent to ${toEmail}. MessageId: ${result.MessageId}`,
-    );
+    if (this.isDevelopment) {
+      await this.sendEmailWithNodemailer(
+        toEmail,
+        subject,
+        txtTemplate,
+        htmlTemplate,
+      );
+    } else {
+      await this.sendEmailWithSES(toEmail, subject, txtTemplate, htmlTemplate);
+    }
   }
 
   async sendInviteEmail(
@@ -104,41 +104,19 @@ export class EmailService {
 
     const htmlTemplate = await this.getTemplate('invite', 'html');
     const txtTemplate = await this.getTemplate('invite', 'txt');
-
     const subject = `FeeNex - Invitation to join ${orgName}`;
+
     const html = this.replaceVariables(htmlTemplate, { orgName, inviteLink });
     const plainText = this.replaceVariables(txtTemplate, {
       orgName,
       inviteLink,
     });
 
-    const command = new SendEmailCommand({
-      Source: this.sourceEmail,
-      Destination: {
-        ToAddresses: [toEmail],
-      },
-      Message: {
-        Subject: {
-          Data: subject,
-          Charset: 'UTF-8',
-        },
-        Body: {
-          Text: {
-            Data: plainText,
-            Charset: 'UTF-8',
-          },
-          Html: {
-            Data: html,
-            Charset: 'UTF-8',
-          },
-        },
-      },
-    });
-
-    const result = await this.sesClient.send(command);
-    this.logger.log(
-      `Invite email sent to ${toEmail}. MessageId: ${result.MessageId}`,
-    );
+    if (this.isDevelopment) {
+      await this.sendEmailWithNodemailer(toEmail, subject, plainText, html);
+    } else {
+      await this.sendEmailWithSES(toEmail, subject, plainText, html);
+    }
   }
 
   async sendResetPasswordEmail(
@@ -162,10 +140,66 @@ export class EmailService {
 
     const htmlTemplate = await this.getTemplate('reset-password', 'html');
     const txtTemplate = await this.getTemplate('reset-password', 'txt');
-
     const subject = 'FeeNex - Reset Your Password';
+
     const html = this.replaceVariables(htmlTemplate, { resetLink });
     const plainText = this.replaceVariables(txtTemplate, { resetLink });
+
+    if (this.isDevelopment) {
+      await this.sendEmailWithNodemailer(toEmail, subject, plainText, html);
+    } else {
+      await this.sendEmailWithSES(toEmail, subject, plainText, html);
+    }
+  }
+
+  private async sendEmailWithNodemailer(
+    toEmail: string,
+    subject: string,
+    plainText: string,
+    html: string,
+  ): Promise<void> {
+    if (!this.nodeMailerTransporter) {
+      throw new Error(
+        'Nodemailer transporter not initialized for development environment',
+      );
+    }
+
+    const mailOptions = {
+      from: this.sourceEmail,
+      to: toEmail,
+      subject,
+      text: plainText,
+      html,
+    };
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const result = await this.nodeMailerTransporter.sendMail(mailOptions);
+      this.logger.log(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        `Email sent to ${toEmail} via SendGrid. MessageId: ${result.messageId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send email to ${toEmail} via SendGrid:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  // Existing SES method (unchanged)
+  private async sendEmailWithSES(
+    toEmail: string,
+    subject: string,
+    plainText: string,
+    html: string,
+  ): Promise<void> {
+    if (!this.sesClient) {
+      throw new Error(
+        'AWS SES client not initialized for production environment',
+      );
+    }
 
     const command = new SendEmailCommand({
       Source: this.sourceEmail,
@@ -192,7 +226,7 @@ export class EmailService {
 
     const result = await this.sesClient.send(command);
     this.logger.log(
-      `Reset password email sent to ${toEmail}. MessageId: ${result.MessageId}`,
+      `Email sent to ${toEmail} via AWS SES. MessageId: ${result.MessageId}`,
     );
   }
 

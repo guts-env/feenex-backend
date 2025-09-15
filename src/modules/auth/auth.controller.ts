@@ -4,7 +4,6 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Logger,
   Patch,
   Post,
   Request,
@@ -27,8 +26,6 @@ import { type IAuthenticatedRequest } from '@/modules/auth/types/auth';
 
 @Controller(ModuleRoutes.Auth.Main)
 export class AuthController {
-  private readonly logger = new Logger(AuthController.name);
-
   constructor(
     private readonly authService: AuthService,
     private readonly emailService: EmailService,
@@ -97,9 +94,6 @@ export class AuthController {
   ): Promise<void> {
     const refreshToken = (req.cookies as { refreshToken?: string })
       ?.refreshToken;
-
-    this.logger.log(`Cookies: ${JSON.stringify(req.cookies)}`);
-    this.logger.log(`Refresh token: ${refreshToken}`);
 
     if (!refreshToken) {
       throw new UnauthorizedException({ message: 'Refresh token not found' });
