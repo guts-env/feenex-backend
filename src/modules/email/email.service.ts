@@ -32,20 +32,25 @@ export class EmailService {
       this.configService.get<string>('NODE_ENV') === 'development';
 
     if (this.isDevelopment) {
+      // Setup SendGrid for development
       this.nodeMailerTransporter = nodemailer.createTransport({
         host: 'smtp.sendgrid.net',
-        port: 587,
-        secure: false,
+        port: 465, // Try 465 first (SSL)
+        secure: true, // Use SSL
         auth: {
-          user: 'apikey',
+          user: 'apikey', // literally the word "apikey"
           pass: this.configService.get<string>('SENDGRID_API_KEY'),
         },
+        connectionTimeout: 60000, // 60 seconds
+        greetingTimeout: 30000, // 30 seconds
+        socketTimeout: 60000, // 60 seconds
       }) as nodemailer.Transporter;
       this.sourceEmail = this.configService.get<string>(
         'SENDGRID_FROM_EMAIL',
         'noreply@feenex.com',
       );
     } else {
+      // Setup AWS SES for production
       const awsConfig = this.configService.get<IAwsConfig>(AWS_CONFIG_KEY)!;
       this.sesClient = new SESClient({
         region: awsConfig.region,
@@ -152,6 +157,68 @@ export class EmailService {
     }
   }
 
+  // Method for SendGrid Web API (works on Render)
+  private async sendEmailWithSendGridAPI(
+    toEmail: string,
+    subject: string,
+    plainText: string,
+    html: string,
+  ): Promise<void> {
+    const apiKey = this.configService.get<string>('SENDGRID_API_KEY');
+    if (!apiKey) {
+      throw new Error('SendGrid API key not configured');
+    }
+
+    const payload = {
+      personalizations: [
+        {
+          to: [{ email: toEmail }],
+        },
+      ],
+      from: { email: this.sourceEmail },
+      subject,
+      content: [
+        {
+          type: 'text/plain',
+          value: plainText,
+        },
+        {
+          type: 'text/html',
+          value: html,
+        },
+      ],
+    };
+
+    try {
+      const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `SendGrid API error: ${response.status} - ${errorText}`,
+        );
+      }
+
+      this.logger.log(
+        `Email sent to ${toEmail} via SendGrid API. Status: ${response.status}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send email to ${toEmail} via SendGrid API:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  // Legacy method for Nodemailer (not used on Render due to SMTP port blocking)
   private async sendEmailWithNodemailer(
     toEmail: string,
     subject: string,
@@ -174,9 +241,9 @@ export class EmailService {
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const result = await this.nodeMailerTransporter.sendMail(mailOptions);
+      const result: { messageId: string } =
+        await this.nodeMailerTransporter.sendMail(mailOptions);
       this.logger.log(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         `Email sent to ${toEmail} via SendGrid. MessageId: ${result.messageId}`,
       );
     } catch (error) {
