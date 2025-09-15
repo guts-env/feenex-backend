@@ -5,6 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { plainToInstance } from 'class-transformer';
 import { ExpensesRepository } from '@/modules/expenses/expenses.repository';
 import GetExpensesDto from '@/modules/expenses/dto/get-expenses.dto';
@@ -19,16 +20,23 @@ import GetExpenseResDto from '@/modules/expenses/dto/get-expense-res.dto';
 import { QueueService } from '@/modules/queue/queue.service';
 import ExpenseEventsGateway from '@/modules/sockets/expense-events.gateway';
 import { type ProcessingStatus } from '@/database/types/db';
+import { DEFAULT_CATEGORY_ID_CONFIG_KEY } from '@/config/keys.config';
 
 @Injectable()
 export class ExpensesService {
   private readonly logger = new Logger(ExpensesService.name);
+  private readonly defaultCategoryId: string;
 
   constructor(
+    private readonly configService: ConfigService,
     private readonly expensesRepository: ExpensesRepository,
     private readonly queueService: QueueService,
     private readonly expensesEventsGateway: ExpenseEventsGateway,
-  ) {}
+  ) {
+    this.defaultCategoryId = this.configService.get<string>(
+      DEFAULT_CATEGORY_ID_CONFIG_KEY,
+    )!;
+  }
 
   async createExpense(
     orgId: string,
@@ -90,7 +98,7 @@ export class ExpensesService {
   ) {
     try {
       const expense = await this.createExpense(orgId, userId, {
-        categoryId: 'd2a95b07-9356-4772-ab3a-193765c501a9',
+        categoryId: this.defaultCategoryId,
         source: 'ocr',
         merchantName: 'Processing...',
         amount: 0.0,
