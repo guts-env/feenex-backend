@@ -27,7 +27,7 @@ export class UsersService {
     email: string,
     isRegistration?: boolean,
   ): Promise<IUser | null> {
-    const user = await this.userRepository.findByEmail(email, isRegistration);
+    const user = await this.userRepository.findByEmail(email);
 
     if (!user) {
       if (!isRegistration) {

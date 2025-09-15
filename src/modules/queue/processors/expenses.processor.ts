@@ -12,7 +12,7 @@ import { type IExtractedData } from '@/modules/llm/types/llm';
 
 @Injectable()
 @Processor(EXPENSES_QUEUE, {
-  concurrency: 3,
+  concurrency: 5,
 })
 export class ExpensesConsumer extends WorkerHost {
   private readonly logger = new Logger(ExpensesConsumer.name);
@@ -83,6 +83,7 @@ export class ExpensesConsumer extends WorkerHost {
         llmResultId: job.data.llmResultId,
         processingStatus: 'completed',
       },
+      true,
     );
 
     this.expensesEventsGateway.notifyProcessedExpense(orgId, userId, {

@@ -79,7 +79,6 @@ export class UploadService {
     key: string,
     orgId: string,
   ): Promise<{ key: string; url: string; filename: string }> {
-    console.log(key);
     try {
       if (!key.startsWith(orgId)) {
         this.logger.error(FILE_KEY_DOES_NOT_START_WITH_ORG_ID, {

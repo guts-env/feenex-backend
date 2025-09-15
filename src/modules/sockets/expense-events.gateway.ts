@@ -157,8 +157,6 @@ export default class ExpenseEventsGateway
       }
       this.userSockets.get(userId)!.add(socket.id);
 
-      console.log(this.userSockets);
-
       await socket.join(`org:${orgId}`);
     } catch (error) {
       this.logger.error(

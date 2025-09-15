@@ -115,4 +115,26 @@ export class InvitesRepository extends BaseRepository {
       this.handleDatabaseError(error);
     }
   }
+
+  async updateInvite(
+    id: string,
+    userId: string,
+    hashedToken: string,
+  ): Promise<void> {
+    try {
+      await this.db
+        .updateTable('invites')
+        .set({
+          updated_by: userId,
+          updated_at: new Date(),
+          token: hashedToken,
+          used: false,
+          used_at: null,
+        })
+        .where('id', '=', id)
+        .executeTakeFirstOrThrow();
+    } catch (error: any) {
+      this.handleDatabaseError(error);
+    }
+  }
 }

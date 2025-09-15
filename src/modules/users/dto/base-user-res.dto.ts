@@ -19,4 +19,8 @@ export default class UserResDto {
   @Expose()
   @Transform(({ obj }: { obj: Users }) => obj.last_name)
   lastName!: string;
+
+  @Expose()
+  @Transform(({ obj }: { obj: Users }) => obj.profile_photo)
+  profilePhoto!: string;
 }

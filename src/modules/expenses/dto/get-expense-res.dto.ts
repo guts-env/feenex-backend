@@ -2,7 +2,7 @@ import { Expose, Transform, Type } from 'class-transformer';
 import BaseCategoryResDto from '@/modules/categories/dto/base-category-res.dto';
 import UserResDto from '@/modules/users/dto/base-user-res.dto';
 import { type IBaseRepositoryExpense } from '@/modules/expenses/types/expenses';
-import { type ExpenseStatus } from '@/database/types/db';
+import { type ProcessingStatus, type ExpenseStatus } from '@/database/types/db';
 
 class ExpenseItemResDto {
   @Expose()
@@ -37,6 +37,12 @@ export default class GetExpenseResDto {
 
   @Expose()
   status!: ExpenseStatus;
+
+  @Expose()
+  @Transform(
+    ({ obj }: { obj: IBaseRepositoryExpense }) => obj.processing_status,
+  )
+  processingStatus!: ProcessingStatus;
 
   @Expose()
   @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.merchant_name)

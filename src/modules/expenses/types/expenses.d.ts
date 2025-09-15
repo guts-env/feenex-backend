@@ -1,5 +1,6 @@
 import { type IBaseRepositoryInterface } from '@/common/modules/base/types/base';
 import {
+  ProcessingStatus,
   type CurrencyCode,
   type ExpenseSource,
   type ExpenseStatus,
@@ -33,6 +34,7 @@ export interface IBaseRepositoryExpense extends IBaseRepositoryInterface {
   other_details?: IExpenseOtherDetails[] | null;
   source: ExpenseSource;
   status: ExpenseStatus;
+  processing_status: ProcessingStatus;
   verified_by?: Omit<
     IBaseRepositoryUser,
     'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'email'

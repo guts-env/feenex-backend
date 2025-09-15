@@ -26,6 +26,7 @@ export class ExpensesRepository extends BaseRepository {
       'e.other_details',
       'e.source',
       'e.status',
+      'e.processing_status',
       'e.merchant_name',
       'e.currency',
       'e.date',
@@ -78,6 +79,7 @@ export class ExpensesRepository extends BaseRepository {
       photos: row['photos'] as string[] | null,
       source: row['source'] as ExpenseSource,
       status: row['status'] as ExpenseStatus,
+      processing_status: row['processing_status'] as ProcessingStatus,
       created_at: row['created_at'] as Date,
       updated_at: row['updated_at'] as Date,
       verified_at: row['verified_at'] as Date | null,
@@ -305,7 +307,7 @@ export class ExpensesRepository extends BaseRepository {
     id: string,
     userId: string,
     orgId: string,
-    dto: UpdateExpenseDto,
+    dto: UpdateExpenseDto & { processingStatus?: ProcessingStatus },
   ): Promise<IBaseRepositoryExpense> {
     const {
       categoryId,
@@ -316,6 +318,7 @@ export class ExpensesRepository extends BaseRepository {
       items,
       otherDetails,
       photos,
+      processingStatus,
     } = dto;
 
     const updateObj = {};
@@ -329,6 +332,8 @@ export class ExpensesRepository extends BaseRepository {
     if (otherDetails !== undefined)
       updateObj['other_details'] = JSON.stringify(otherDetails);
     if (photos !== undefined) updateObj['photos'] = photos;
+    if (processingStatus !== undefined)
+      updateObj['processing_status'] = processingStatus;
 
     updateObj['updated_by'] = userId;
     updateObj['updated_at'] = new Date();

@@ -36,33 +36,30 @@ export class InvitesService {
     return this.invitesRepository.findByToken(hashedToken);
   }
 
+  updateInvite(id: string, userId: string, hashedToken: string): Promise<void> {
+    return this.invitesRepository.updateInvite(id, userId, hashedToken);
+  }
+
   async createInvite(
     orgId: string,
     orgName: string,
     userId: string,
     dto: CreateInviteDto,
   ) {
-    const userExists = await this.usersService.findByEmail(dto.email, true);
-    if (userExists) {
-      const user = await this.usersService.findByEmail(dto.email);
-      if (user!.id === userId) {
+    const user = await this.usersService.findByEmail(dto.email, true);
+
+    if (user) {
+      if (user.id === userId) {
         throw new BadRequestException({
           message: 'You cannot invite yourself.',
         });
       }
 
-      if (user?.organization.id === orgId) {
+      if (user.organization.id === orgId) {
         throw new ConflictException({
           message: 'Email already exists in this organization.',
         });
       }
-    }
-
-    const existingInvite = await this.findByEmail(dto.email);
-    if (existingInvite) {
-      throw new ConflictException({
-        message: 'This email has already been invited.',
-      });
     }
 
     const token = this.generateInviteToken();
@@ -70,7 +67,24 @@ export class InvitesService {
 
     const inviteLink = `${this.acceptInviteRedirectUrl}?inviteToken=${token}`;
 
-    await this.invitesRepository.createInvite(orgId, userId, dto, hashedToken);
+    const existingInvite = await this.findByEmail(dto.email);
+    if (existingInvite) {
+      if (!existingInvite.used) {
+        throw new BadRequestException({
+          message: 'This email has already been invited.',
+        });
+      }
+
+      await this.updateInvite(existingInvite.id, userId, hashedToken);
+    } else {
+      await this.invitesRepository.createInvite(
+        orgId,
+        userId,
+        dto,
+        hashedToken,
+      );
+    }
+
     await this.emailService.sendInviteEmail(dto.email, orgName, inviteLink);
   }
 

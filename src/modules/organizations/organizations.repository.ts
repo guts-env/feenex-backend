@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { BaseRepository } from '@/common/modules/base/base.repository';
 import GetMembersDto from '@/modules/organizations/dto/get-members.dto';
 import UpdateOrganizationDto from '@/modules/organizations/dto/update-organization.dto';
-import RemoveMemberDto from '@/modules/organizations/dto/remove-member.dto';
 import UpdateMemberRoleDto from '@/modules/organizations/dto/update-member-role.dto';
 import { DEFAULT_QUERY_LIMIT } from '@/config/db.config';
 import { type IRepositoryOrganization } from '@/modules/organizations/types/organizations';
@@ -156,11 +155,13 @@ export class OrganizationRepository extends BaseRepository {
         'u.first_name',
         'u.middle_name',
         'u.last_name',
+        'u.profile_photo',
         'u.created_at',
         'u.updated_at',
         'r.id as role_id',
         'r.name as role_name',
       ]);
+
       const countQuery = membersBaseQuery.select(({ fn }) => [
         fn.countAll().as('count'),
       ]);
@@ -192,49 +193,34 @@ export class OrganizationRepository extends BaseRepository {
   }
 
   async updateMemberRole(
+    updatedUserId: string,
     dto: UpdateMemberRoleDto,
-  ): Promise<IRepositoryUserWithRole> {
-    const { userId, role } = dto;
+  ): Promise<void> {
+    const { role } = dto;
 
     try {
-      const userOrg = await this.db
+      const roleObj = await this.db
+        .selectFrom('roles')
+        .select('id')
+        .where('name', '=', role)
+        .executeTakeFirstOrThrow();
+
+      await this.db
         .updateTable('user_organizations')
-        .set({ role_id: role })
-        .where('user_id', '=', userId)
+        .set({ role_id: roleObj.id })
+        .where('user_id', '=', updatedUserId)
         .returning('user_id')
         .executeTakeFirstOrThrow();
-
-      const result = await this.db
-        .selectFrom('users as u')
-        .innerJoin('user_organizations as uo', 'u.id', 'uo.user_id')
-        .innerJoin('roles as r', 'uo.role_id', 'r.id')
-        .select([
-          'u.id',
-          'u.email',
-          'u.first_name',
-          'u.middle_name',
-          'u.last_name',
-          'u.created_at',
-          'u.updated_at',
-          'r.id as role_id',
-          'r.name as role_name',
-        ])
-        .where('u.id', '=', userOrg.user_id)
-        .executeTakeFirstOrThrow();
-
-      return result;
     } catch (error: any) {
       this.handleDatabaseError(error);
     }
   }
 
-  async removeMember(orgId: string, dto: RemoveMemberDto) {
-    const { userId } = dto;
-
+  async removeMember(orgId: string, removedUserId: string) {
     try {
       return this.db
         .deleteFrom('user_organizations')
-        .where('user_id', '=', userId)
+        .where('user_id', '=', removedUserId)
         .where('organization_id', '=', orgId)
         .execute();
     } catch (error: any) {

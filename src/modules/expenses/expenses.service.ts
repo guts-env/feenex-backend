@@ -1,7 +1,9 @@
 import {
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { ExpensesRepository } from '@/modules/expenses/expenses.repository';
@@ -129,14 +131,36 @@ export class ExpensesService {
     userId: string,
     orgId: string,
     payload: UpdateExpenseDto & { processingStatus?: ProcessingStatus },
+    fromJob?: boolean,
   ): Promise<GetExpenseResDto> {
-    const expense = await this.expensesRepository.update(
+    const expense = await this.expensesRepository.findById(id, orgId);
+
+    if (!expense) {
+      throw new NotFoundException({
+        message: 'Expense does not exist.',
+      });
+    }
+
+    if (expense.status === 'verified') {
+      throw new ForbiddenException({
+        message: 'Cannot update verified expense.',
+      });
+    }
+
+    if (expense.processing_status === 'processing' && !fromJob) {
+      throw new ForbiddenException({
+        message: 'Cannot update a processing expense.',
+      });
+    }
+
+    const updatedExpense = await this.expensesRepository.update(
       id,
       userId,
       orgId,
       payload,
     );
-    return plainToInstance(GetExpenseResDto, expense);
+
+    return plainToInstance(GetExpenseResDto, updatedExpense);
   }
 
   async verifyExpense(id: string, userId: string, orgId: string) {

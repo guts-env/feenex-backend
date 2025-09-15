@@ -21,7 +21,6 @@ import { RoleProtected } from '@/modules/auth/decorators/auth.decorator';
 import GetOrganizationDto from '@/modules/organizations/dto/get-organization-res.dto';
 import UpdateOrganizationDto from '@/modules/organizations/dto/update-organization.dto';
 import GetMembersDto from '@/modules/organizations/dto/get-members.dto';
-import RemoveMemberDto from '@/modules/organizations/dto/remove-member.dto';
 import UpdateMemberRoleDto from '@/modules/organizations/dto/update-member-role.dto';
 import GetMembersResDto from '@/modules/organizations/dto/get-members-res.dto';
 import { type IAuthenticatedRequest } from '@/modules/auth/types/auth';
@@ -31,7 +30,6 @@ import { type IAuthenticatedRequest } from '@/modules/auth/types/auth';
 @Controller(ModuleRoutes.Organizations.Main)
 export class OrganizationsController {
   constructor(private readonly organizationsService: OrganizationsService) {}
-
   @BusinessOnly()
   @Get(ModuleRoutes.Organizations.Paths.Members)
   getMembers(
@@ -49,11 +47,23 @@ export class OrganizationsController {
   @Delete(':id/' + ModuleRoutes.Organizations.Paths.Members)
   @HttpCode(HttpStatus.NO_CONTENT)
   removeMember(
-    @Param('id') id: string,
+    @Param('id') removedUserId: string,
     @Request() req: IAuthenticatedRequest,
-    @Body() dto: RemoveMemberDto,
   ) {
-    return this.organizationsService.removeMember(req.user.sub, id, dto);
+    return this.organizationsService.removeMember(
+      req.user.sub,
+      req.user.organization.id,
+      removedUserId,
+    );
+  }
+
+  @BusinessOnly()
+  @Patch(':id/' + ModuleRoutes.Organizations.Paths.MemberRole)
+  updateMemberRole(
+    @Param('id') updatedUserId: string,
+    @Body() dto: UpdateMemberRoleDto,
+  ) {
+    return this.organizationsService.updateMemberRole(updatedUserId, dto);
   }
 
   @Get(':id')
@@ -68,11 +78,5 @@ export class OrganizationsController {
     @Body() dto: UpdateOrganizationDto,
   ): Promise<GetOrganizationDto> {
     return this.organizationsService.findByIdAndUpdate(id, dto);
-  }
-
-  @BusinessOnly()
-  @Patch(':id/' + ModuleRoutes.Organizations.Paths.MemberRole)
-  updateMemberRole(@Body() dto: UpdateMemberRoleDto) {
-    return this.organizationsService.updateMemberRole(dto);
   }
 }
