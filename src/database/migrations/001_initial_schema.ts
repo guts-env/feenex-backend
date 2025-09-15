@@ -56,8 +56,8 @@ export async function up(db: Kysely<any>): Promise<void> {
       col.notNull().references('users.id').onDelete('cascade'),
     )
     .addColumn('password', 'varchar(60)', (col) => col.notNull())
-    .addColumn('reset_token', 'varchar(255)')
-    .addColumn('reset_token_expires_at', 'timestamptz', (col) =>
+    .addColumn('reset_password_token', 'varchar(255)')
+    .addColumn('reset_password_token_expires_at', 'timestamptz', (col) =>
       col.notNull().defaultTo(sql`NOW() + INTERVAL '1 hour'`),
     )
     .addColumn('created_at', 'timestamptz', (col) =>

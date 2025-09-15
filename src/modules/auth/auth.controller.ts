@@ -146,7 +146,7 @@ export class AuthController {
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'strict',
+      sameSite: 'none',
       maxAge: cookieExpiration,
       path: '/',
     });
