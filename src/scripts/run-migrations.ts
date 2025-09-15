@@ -16,10 +16,6 @@ async function migrateToLatest() {
     dialect: new PostgresDialect({
       pool: new Pool({
         connectionString: process.env.DATABASE_URL,
-        max: 1,
-        min: 0,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 10000,
       }),
     }),
   });
