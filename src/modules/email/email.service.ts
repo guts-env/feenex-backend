@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
-import * as nodemailer from 'nodemailer';
 import { join } from 'path';
 import { readFile } from 'fs/promises';
 import {
@@ -15,9 +14,9 @@ export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private readonly enableEmailService: boolean;
   private readonly sesClient?: SESClient;
-  private readonly nodeMailerTransporter?: nodemailer.Transporter;
   private readonly sourceEmail: string;
   private readonly isDevelopment: boolean;
+  private readonly sendGridApiKey: string;
   private readonly templatesPath = join(
     process.cwd(),
     'src',
@@ -32,23 +31,19 @@ export class EmailService {
       this.configService.get<string>('NODE_ENV') === 'development';
 
     if (this.isDevelopment) {
-      // Setup SendGrid for development
-      this.nodeMailerTransporter = nodemailer.createTransport({
-        host: 'smtp.sendgrid.net',
-        port: 465, // Try 465 first (SSL)
-        secure: true, // Use SSL
-        auth: {
-          user: 'apikey', // literally the word "apikey"
-          pass: this.configService.get<string>('SENDGRID_API_KEY'),
-        },
-        connectionTimeout: 60000, // 60 seconds
-        greetingTimeout: 30000, // 30 seconds
-        socketTimeout: 60000, // 60 seconds
-      }) as nodemailer.Transporter;
+      // Setup SendGrid Web API for development
+      this.sendGridApiKey = this.configService.get<string>(
+        'SENDGRID_API_KEY',
+        '',
+      );
       this.sourceEmail = this.configService.get<string>(
         'SENDGRID_FROM_EMAIL',
         'noreply@feenex.com',
       );
+
+      if (!this.sendGridApiKey) {
+        this.logger.warn('SENDGRID_API_KEY not configured for development');
+      }
     } else {
       // Setup AWS SES for production
       const awsConfig = this.configService.get<IAwsConfig>(AWS_CONFIG_KEY)!;
@@ -57,6 +52,7 @@ export class EmailService {
         credentials: awsConfig.credentials,
       });
       this.sourceEmail = awsConfig.ses.sourceEmail;
+      this.sendGridApiKey = '';
     }
 
     this.enableEmailService = Boolean(
@@ -70,6 +66,7 @@ export class EmailService {
 
   async sendWelcomeEmail(toEmail: string): Promise<void> {
     if (!this.enableEmailService) {
+      this.logger.log('Email service disabled, skipping welcome email');
       return;
     }
 
@@ -78,7 +75,7 @@ export class EmailService {
     const subject = 'FeeNex - Welcome to FeeNex!';
 
     if (this.isDevelopment) {
-      await this.sendEmailWithNodemailer(
+      await this.sendEmailWithSendGridAPI(
         toEmail,
         subject,
         txtTemplate,
@@ -95,6 +92,7 @@ export class EmailService {
     inviteLink: string,
   ): Promise<void> {
     if (!this.enableEmailService) {
+      this.logger.log('Email service disabled, skipping invite email');
       return;
     }
 
@@ -118,7 +116,7 @@ export class EmailService {
     });
 
     if (this.isDevelopment) {
-      await this.sendEmailWithNodemailer(toEmail, subject, plainText, html);
+      await this.sendEmailWithSendGridAPI(toEmail, subject, plainText, html);
     } else {
       await this.sendEmailWithSES(toEmail, subject, plainText, html);
     }
@@ -129,6 +127,7 @@ export class EmailService {
     resetLink: string,
   ): Promise<void> {
     if (!this.enableEmailService) {
+      this.logger.log('Email service disabled, skipping reset password email');
       return;
     }
 
@@ -151,21 +150,21 @@ export class EmailService {
     const plainText = this.replaceVariables(txtTemplate, { resetLink });
 
     if (this.isDevelopment) {
-      await this.sendEmailWithNodemailer(toEmail, subject, plainText, html);
+      await this.sendEmailWithSendGridAPI(toEmail, subject, plainText, html);
     } else {
       await this.sendEmailWithSES(toEmail, subject, plainText, html);
     }
   }
 
-  // Method for SendGrid Web API (works on Render)
+  // SendGrid Web API method (works on Render)
   private async sendEmailWithSendGridAPI(
     toEmail: string,
     subject: string,
     plainText: string,
     html: string,
   ): Promise<void> {
-    const apiKey = this.configService.get<string>('SENDGRID_API_KEY');
-    if (!apiKey) {
+    if (!this.sendGridApiKey) {
+      this.logger.error('SendGrid API key not configured');
       throw new Error('SendGrid API key not configured');
     }
 
@@ -189,11 +188,14 @@ export class EmailService {
       ],
     };
 
+    this.logger.log(`Attempting to send email to ${toEmail} via SendGrid API`);
+    this.logger.debug('SendGrid payload:', JSON.stringify(payload, null, 2));
+
     try {
       const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${this.sendGridApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
@@ -201,61 +203,28 @@ export class EmailService {
 
       if (!response.ok) {
         const errorText = await response.text();
+        this.logger.error(
+          `SendGrid API error: ${response.status} - ${errorText}`,
+        );
         throw new Error(
           `SendGrid API error: ${response.status} - ${errorText}`,
         );
       }
 
+      // SendGrid returns 202 for successful email acceptance
       this.logger.log(
-        `Email sent to ${toEmail} via SendGrid API. Status: ${response.status}`,
+        `✅ Email successfully sent to ${toEmail} via SendGrid API. Status: ${response.status}`,
       );
     } catch (error) {
       this.logger.error(
-        `Failed to send email to ${toEmail} via SendGrid API:`,
+        `❌ Failed to send email to ${toEmail} via SendGrid API:`,
         error,
       );
       throw error;
     }
   }
 
-  // Legacy method for Nodemailer (not used on Render due to SMTP port blocking)
-  private async sendEmailWithNodemailer(
-    toEmail: string,
-    subject: string,
-    plainText: string,
-    html: string,
-  ): Promise<void> {
-    if (!this.nodeMailerTransporter) {
-      throw new Error(
-        'Nodemailer transporter not initialized for development environment',
-      );
-    }
-
-    const mailOptions = {
-      from: this.sourceEmail,
-      to: toEmail,
-      subject,
-      text: plainText,
-      html,
-    };
-
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const result: { messageId: string } =
-        await this.nodeMailerTransporter.sendMail(mailOptions);
-      this.logger.log(
-        `Email sent to ${toEmail} via SendGrid. MessageId: ${result.messageId}`,
-      );
-    } catch (error) {
-      this.logger.error(
-        `Failed to send email to ${toEmail} via SendGrid:`,
-        error,
-      );
-      throw error;
-    }
-  }
-
-  // Existing SES method (unchanged)
+  // AWS SES method (unchanged)
   private async sendEmailWithSES(
     toEmail: string,
     subject: string,
