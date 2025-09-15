@@ -146,24 +146,21 @@ export class AuthController {
   }
 
   private setRefreshTokenCookie(res: Response, refreshToken: string): void {
-    const isProduction = process.env.NODE_ENV === 'production';
     const cookieExpiration = 7 * 24 * 60 * 60 * 1000;
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: isProduction,
+      secure: true,
       sameSite: 'none',
       maxAge: cookieExpiration,
-      path: '/',
     });
   }
 
   private clearRefreshTokenCookie(res: Response): void {
     res.clearCookie('refreshToken', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/',
+      secure: true,
+      sameSite: 'none',
     });
   }
 }
