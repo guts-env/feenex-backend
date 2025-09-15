@@ -3,10 +3,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
-import {
-  REDIS_HOST_CONFIG_KEY,
-  REDIS_PORT_CONFIG_KEY,
-} from '@/config/keys.config';
+import { REDIS_URL_CONFIG_KEY } from '@/config/keys.config';
 import AwsConfig from '@/config/aws.config';
 import GcpConfig from '@/config/gcp.config';
 import { AuthModule } from '@/modules/auth/auth.module';
@@ -37,8 +34,7 @@ import { ReportsModule } from '@/modules/reports/reports.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         connection: {
-          host: configService.get<string>(REDIS_HOST_CONFIG_KEY),
-          port: Number(configService.get<string>(REDIS_PORT_CONFIG_KEY)),
+          url: configService.get<string>(REDIS_URL_CONFIG_KEY),
         },
         defaultJobOptions: {
           attempts: 3,
