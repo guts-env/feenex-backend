@@ -13,6 +13,7 @@ import {
   type ExpenseStatus,
   type CurrencyCode,
   type ProcessingStatus,
+  UserRole,
 } from '@/database/types/db';
 import { SelectQueryBuilder } from 'kysely';
 
@@ -116,6 +117,7 @@ export class ExpensesRepository extends BaseRepository {
 
   async getExpenses(
     orgId: string,
+    roleName: UserRole,
     query: GetExpensesDto,
   ): Promise<{ count: number; data: IBaseRepositoryExpense[] }> {
     const {
@@ -141,6 +143,14 @@ export class ExpensesRepository extends BaseRepository {
         .innerJoin('users as u2', 'e.updated_by', 'u2.id')
         .leftJoin('users as u3', 'e.verified_by', 'u3.id')
         .where('e.organization_id', '=', orgId);
+
+      if (roleName === 'member') {
+        expensesBaseQuery = expensesBaseQuery.where(
+          'e.status',
+          '!=',
+          'verified',
+        );
+      }
 
       if (categories && categories.length > 0) {
         expensesBaseQuery = expensesBaseQuery.where(

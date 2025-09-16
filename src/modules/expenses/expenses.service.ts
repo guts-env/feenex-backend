@@ -19,7 +19,7 @@ import UpdateExpenseDto from '@/modules/expenses/dto/update-expense.dto';
 import GetExpenseResDto from '@/modules/expenses/dto/get-expense-res.dto';
 import { QueueService } from '@/modules/queue/queue.service';
 import ExpenseEventsGateway from '@/modules/sockets/expense-events.gateway';
-import { type ProcessingStatus } from '@/database/types/db';
+import { UserRole, type ProcessingStatus } from '@/database/types/db';
 import { DEFAULT_CATEGORY_ID_CONFIG_KEY } from '@/config/keys.config';
 
 @Injectable()
@@ -120,9 +120,14 @@ export class ExpensesService {
 
   async getExpenses(
     orgId: string,
+    roleName: UserRole,
     query: GetExpensesDto,
   ): Promise<GetExpensesResDto> {
-    const res = await this.expensesRepository.getExpenses(orgId, query);
+    const res = await this.expensesRepository.getExpenses(
+      orgId,
+      roleName,
+      query,
+    );
     return plainToInstance(GetExpensesResDto, {
       count: res.count,
       data: res.data,

@@ -38,7 +38,11 @@ export class ExpensesController {
     @Request() req: IAuthenticatedRequest,
     @Query() query: GetExpensesDto,
   ) {
-    return this.expensesService.getExpenses(req.user.organization.id, query);
+    return this.expensesService.getExpenses(
+      req.user.organization.id,
+      req.user.role.name,
+      query,
+    );
   }
 
   @Post()
