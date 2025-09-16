@@ -50,13 +50,11 @@ class BaseExpenseDto {
   status?: ExpenseStatus;
 
   @IsOptional()
-  @ArrayNotEmpty()
   @ValidateNested({ each: true })
   @Type(() => ExpenseItemDto)
   items?: ExpenseItemDto[];
 
   @IsOptional()
-  @ArrayNotEmpty()
   @ValidateNested({ each: true })
   @Type(() => ExpenseOtherDetailDto)
   otherDetails?: ExpenseOtherDetailDto[];
@@ -87,7 +85,6 @@ export class CreateExpenseDto extends BaseExpenseDto {
   date!: string;
 
   @IsOptional()
-  @ArrayNotEmpty()
   @IsString({ each: true })
   photos?: string[];
 

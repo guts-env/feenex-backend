@@ -32,7 +32,7 @@ export class OcrService {
     try {
       const startTime = Date.now();
 
-      const [results] = await Promise.all(
+      const results = await Promise.all(
         imageUrls.map(
           async (imageUrl) =>
             await this.client.annotateImage({
@@ -48,7 +48,9 @@ export class OcrService {
               },
             }),
         ),
-      );
+      ).then((results) => results.map((result) => result[0]));
+
+      console.log(results, imageUrls);
 
       if (results.some((result) => result.error)) {
         await this.ocrRepository.update(ocrRecord.id, {
@@ -68,23 +70,23 @@ export class OcrService {
       const endTime = Date.now();
       const processingTimeMs = endTime - startTime;
 
-      await this.ocrRepository.update(ocrRecord.id, {
-        ocrText: results
-          .map((result) => result.fullTextAnnotation?.text)
-          .join('\n'),
-        processingTimeMs,
-        status: 'completed',
-      });
-
       if (!results.some((result) => result.fullTextAnnotation?.text)) {
         throw new BadRequestException('No text found in the image');
       }
+
+      await this.ocrRepository.update(ocrRecord.id, {
+        ocrText: results
+          .map((result) => result.fullTextAnnotation?.text)
+          .join('\n\nRECEIPT SEPARATOR\n\n'),
+        processingTimeMs,
+        status: 'completed',
+      });
 
       return {
         ocrResultId: ocrRecord.id,
         ocrText: results
           .map((result) => result.fullTextAnnotation?.text)
-          .join('\n'),
+          .join('\n\nRECEIPT SEPARATOR\n\n'),
       };
     } catch (error) {
       await this.ocrRepository.update(ocrRecord.id, {

@@ -318,6 +318,7 @@ export class ExpensesRepository extends BaseRepository {
       items,
       otherDetails,
       photos,
+      status,
       processingStatus,
     } = dto;
 
@@ -332,6 +333,7 @@ export class ExpensesRepository extends BaseRepository {
     if (otherDetails !== undefined)
       updateObj['other_details'] = JSON.stringify(otherDetails);
     if (photos !== undefined) updateObj['photos'] = photos;
+    if (status !== undefined) updateObj['status'] = status;
     if (processingStatus !== undefined)
       updateObj['processing_status'] = processingStatus;
 

@@ -37,9 +37,9 @@ import { ReportsModule } from '@/modules/reports/reports.module';
           url: configService.get<string>(REDIS_URL_CONFIG_KEY),
         },
         defaultJobOptions: {
-          attempts: 3,
+          attempts: 1,
           backoff: {
-            type: 'fixed',
+            type: 'exponential',
             delay: 2000,
           },
         },

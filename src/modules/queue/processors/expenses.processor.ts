@@ -125,9 +125,25 @@ export class ExpensesConsumer extends WorkerHost {
         `Job ${job.id} has reached the maximum number of retries. Marking expense as failed.`,
       );
 
-      await this.expensesService.updateExpense(expenseId, userId, orgId, {
-        processingStatus: 'failed',
-        merchantName: 'Processing Failed',
+      const failedMerchantName = 'Processing Failed';
+
+      await this.expensesService.updateExpense(
+        expenseId,
+        userId,
+        orgId,
+        {
+          status: 'draft',
+          processingStatus: 'failed',
+          merchantName: failedMerchantName,
+        },
+        true,
+      );
+
+      this.expensesEventsGateway.notifyProcessedExpense(orgId, userId, {
+        id: expenseId,
+        organization_id: orgId,
+        merchant_name: failedMerchantName,
+        amount: 0,
       });
     } else {
       this.logger.error(
