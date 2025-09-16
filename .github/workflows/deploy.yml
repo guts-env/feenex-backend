@@ -4,16 +4,28 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-  pull_request:
-    branches: [main]
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup Yarn
+        run: npm install -g yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build application
+        run: yarn build
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
@@ -25,6 +37,31 @@ jobs:
             cd /home/ec2-user/feenex-backend
             git pull origin main
             yarn install --production --frozen-lockfile
-            yarn build
-            pm2 restart feenex-backend
+            pm2 stop feenex-backend || true
+            rm -rf dist
+
+      - name: Upload built files
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: 'dist'
+          target: '/home/ec2-user/feenex-backend/'
+
+      - name: Run migrations and restart
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ec2-user/feenex-backend
+
+            # Run database migrations
+            yarn migrate:run
+
+            # Start/restart the app
+            pm2 start feenex-backend || pm2 restart feenex-backend
             pm2 save
+            pm2 status
