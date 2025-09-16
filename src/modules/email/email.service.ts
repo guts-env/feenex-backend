@@ -6,7 +6,6 @@ import { readFile } from 'fs/promises';
 import {
   AWS_CONFIG_KEY,
   ENABLE_EMAIL_SERVICE_CONFIG_KEY,
-  NODE_ENV_CONFIG_KEY,
 } from '@/config/keys.config';
 import { type IAwsConfig } from '@/common/types/config';
 
@@ -28,11 +27,10 @@ export class EmailService {
   private templateCache: Map<string, string> = new Map();
 
   constructor(private readonly configService: ConfigService) {
-    this.isDevelopment =
-      this.configService.get<string>(NODE_ENV_CONFIG_KEY) === 'development';
+    /* force true for now to use sendgrid */
+    this.isDevelopment = true;
 
     if (this.isDevelopment) {
-      // Setup SendGrid Web API for development
       this.sendGridApiKey = this.configService.get<string>(
         'SENDGRID_API_KEY',
         '',
@@ -46,7 +44,6 @@ export class EmailService {
         this.logger.warn('SENDGRID_API_KEY not configured for development');
       }
     } else {
-      // Setup AWS SES for production
       const awsConfig = this.configService.get<IAwsConfig>(AWS_CONFIG_KEY)!;
       this.sesClient = new SESClient({
         region: awsConfig.region,
@@ -157,7 +154,6 @@ export class EmailService {
     }
   }
 
-  // SendGrid Web API method (works on Render)
   private async sendEmailWithSendGridAPI(
     toEmail: string,
     subject: string,
@@ -212,7 +208,6 @@ export class EmailService {
         );
       }
 
-      // SendGrid returns 202 for successful email acceptance
       this.logger.log(
         `✅ Email successfully sent to ${toEmail} via SendGrid API. Status: ${response.status}`,
       );
@@ -225,7 +220,6 @@ export class EmailService {
     }
   }
 
-  // AWS SES method (unchanged)
   private async sendEmailWithSES(
     toEmail: string,
     subject: string,

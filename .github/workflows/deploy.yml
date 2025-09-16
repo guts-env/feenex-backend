@@ -59,9 +59,9 @@ jobs:
             cd /home/ec2-user/feenex-backend
 
             # Run database migrations
-            yarn migrate:run
+            yarn migration:run
 
             # Start/restart the app
-            pm2 start feenex-backend || pm2 restart feenex-backend
+            pm2 start dist/main.js --name feenex-backend || pm2 restart feenex-backend
             pm2 save
             pm2 status

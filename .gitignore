@@ -53,3 +53,6 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 .yarn
+
+# Signatures
+p-southeast-1-bundle.pem
