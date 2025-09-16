@@ -344,8 +344,16 @@ export class ExpensesRepository extends BaseRepository {
       updateObj['other_details'] = JSON.stringify(otherDetails);
     if (photos !== undefined) updateObj['photos'] = photos;
     if (status !== undefined) updateObj['status'] = status;
-    if (status === 'verified') updateObj['verified_by'] = userId;
-    if (status === 'verified') updateObj['verified_at'] = new Date();
+    if (status === 'verified') {
+      updateObj['verified_by'] = userId;
+    } else {
+      updateObj['verified_by'] = null;
+    }
+    if (status === 'verified') {
+      updateObj['verified_at'] = new Date();
+    } else {
+      updateObj['verified_at'] = null;
+    }
     if (processingStatus !== undefined)
       updateObj['processing_status'] = processingStatus;
 
