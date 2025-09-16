@@ -1,8 +1,13 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { Pool } from 'pg';
 import { Kysely, PostgresDialect } from 'kysely';
-import { DATABASE_URL_CONFIG_KEY } from '@/config/keys.config';
+import {
+  DATABASE_URL_CONFIG_KEY,
+  NODE_ENV_CONFIG_KEY,
+} from '@/config/keys.config';
 import { type DB } from '@/database/types/db';
 
 @Injectable()
@@ -15,6 +20,15 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   onModuleInit() {
     this.pool = new Pool({
       connectionString: this.configService.get<string>(DATABASE_URL_CONFIG_KEY),
+      ssl:
+        this.configService.get<string>(NODE_ENV_CONFIG_KEY) === 'production'
+          ? {
+              rejectUnauthorized: false,
+              ca: readFileSync(
+                join(process.cwd(), 'ap-southeast-1-bundle.pem'),
+              ),
+            }
+          : false,
       max: 25,
       min: 5,
       idleTimeoutMillis: 30000,

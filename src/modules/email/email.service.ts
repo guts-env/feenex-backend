@@ -6,6 +6,7 @@ import { readFile } from 'fs/promises';
 import {
   AWS_CONFIG_KEY,
   ENABLE_EMAIL_SERVICE_CONFIG_KEY,
+  NODE_ENV_CONFIG_KEY,
 } from '@/config/keys.config';
 import { type IAwsConfig } from '@/common/types/config';
 
@@ -28,7 +29,7 @@ export class EmailService {
 
   constructor(private readonly configService: ConfigService) {
     this.isDevelopment =
-      this.configService.get<string>('NODE_ENV') === 'development';
+      this.configService.get<string>(NODE_ENV_CONFIG_KEY) === 'development';
 
     if (this.isDevelopment) {
       // Setup SendGrid Web API for development
