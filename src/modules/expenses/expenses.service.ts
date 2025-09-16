@@ -149,12 +149,6 @@ export class ExpensesService {
       });
     }
 
-    if (expense.status === 'verified') {
-      throw new ForbiddenException({
-        message: 'Cannot update verified expense.',
-      });
-    }
-
     if (expense.processing_status === 'processing' && !fromJob) {
       throw new ForbiddenException({
         message: 'Cannot update a processing expense.',
