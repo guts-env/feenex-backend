@@ -121,14 +121,14 @@ export class ExpensesRepository extends BaseRepository {
     query: GetExpensesDto,
   ): Promise<{ count: number; data: IBaseRepositoryExpense[] }> {
     const {
-      categories,
-      createdByUsers,
-      verifiedByUsers,
+      categoryIds,
+      // createdByUsers,
+      // verifiedByUsers,
       startDate,
       endDate,
       minAmount,
       maxAmount,
-      status,
+      statuses,
       search,
       offset,
       limit,
@@ -152,29 +152,29 @@ export class ExpensesRepository extends BaseRepository {
         );
       }
 
-      if (categories && categories.length > 0) {
+      if (categoryIds && categoryIds.length > 0) {
         expensesBaseQuery = expensesBaseQuery.where(
           'e.category_id',
           'in',
-          categories,
+          categoryIds,
         );
       }
 
-      if (createdByUsers && createdByUsers.length > 0) {
-        expensesBaseQuery = expensesBaseQuery.where(
-          'e.created_by',
-          'in',
-          createdByUsers,
-        );
-      }
+      // if (createdByUsers && createdByUsers.length > 0) {
+      //   expensesBaseQuery = expensesBaseQuery.where(
+      //     'e.created_by',
+      //     'in',
+      //     createdByUsers,
+      //   );
+      // }
 
-      if (verifiedByUsers && verifiedByUsers.length > 0) {
-        expensesBaseQuery = expensesBaseQuery.where(
-          'e.verified_by',
-          'in',
-          verifiedByUsers,
-        );
-      }
+      // if (verifiedByUsers && verifiedByUsers.length > 0) {
+      //   expensesBaseQuery = expensesBaseQuery.where(
+      //     'e.verified_by',
+      //     'in',
+      //     verifiedByUsers,
+      //   );
+      // }
 
       if (startDate) {
         expensesBaseQuery = expensesBaseQuery.where('e.date', '>=', startDate);
@@ -200,8 +200,8 @@ export class ExpensesRepository extends BaseRepository {
         );
       }
 
-      if (status && status.length > 0) {
-        expensesBaseQuery = expensesBaseQuery.where('e.status', 'in', status);
+      if (statuses && statuses.length > 0) {
+        expensesBaseQuery = expensesBaseQuery.where('e.status', 'in', statuses);
       }
 
       if (search) {

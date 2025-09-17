@@ -1,12 +1,12 @@
 import {
   ArrayNotEmpty,
-  IsDateString,
+  IsDate,
   IsDecimal,
   IsIn,
   IsOptional,
-  IsString,
+  // IsString,
   IsUUID,
-  MaxLength,
+  // MaxLength,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import PaginatedDto from '@/common/dto/paginated.dto';
@@ -16,47 +16,53 @@ export default class GetExpensesDto extends PaginatedDto<Expenses> {
   @IsOptional()
   @ArrayNotEmpty()
   @IsUUID('4', { each: true })
-  categories?: string[];
+  categoryIds?: string[];
+
+  // @IsOptional()
+  // @ArrayNotEmpty()
+  // @IsUUID('4', { each: true })
+  // createdByUsers?: string[];
+
+  // @IsOptional()
+  // @ArrayNotEmpty()
+  // @IsUUID('4', { each: true })
+  // verifiedByUsers?: string[];
 
   @IsOptional()
-  @ArrayNotEmpty()
-  @IsUUID('4', { each: true })
-  createdByUsers?: string[];
-
-  @IsOptional()
-  @ArrayNotEmpty()
-  @IsUUID('4', { each: true })
-  verifiedByUsers?: string[];
-
-  @IsOptional()
-  @Transform(({ value }: { value: string }) =>
-    value ? new Date(value) : value,
-  )
-  @IsDateString()
+  @Transform(({ value }: { value: string }) => {
+    return value ? new Date(value) : value;
+  })
+  @IsDate()
   startDate?: Date;
 
   @IsOptional()
   @Transform(({ value }: { value: string }) =>
     value ? new Date(value) : value,
   )
-  @IsDateString()
+  @IsDate()
   endDate?: Date;
 
   @IsOptional()
-  @IsDecimal({ decimal_digits: '2', force_decimal: true })
+  @Transform(({ value }: { value: string }) =>
+    value ? parseFloat(value).toFixed(2) : value,
+  )
+  @IsDecimal({ decimal_digits: '0,2', force_decimal: false })
   minAmount?: string;
 
   @IsOptional()
-  @IsDecimal({ decimal_digits: '2', force_decimal: true })
+  @Transform(({ value }: { value: string }) =>
+    value ? parseFloat(value).toFixed(2) : value,
+  )
+  @IsDecimal({ decimal_digits: '0,2', force_decimal: false })
   maxAmount?: string;
 
   @IsOptional()
   @ArrayNotEmpty()
   @IsIn(['draft', 'pending', 'rejected', 'verified'], { each: true })
-  status?: ExpenseStatus[];
+  statuses?: ExpenseStatus[];
 
-  @IsOptional()
-  @IsString()
-  @MaxLength(50, { message: 'Merchant name must be less than 50 characters' })
-  merchantName?: string;
+  // @IsOptional()
+  // @IsString()
+  // @MaxLength(50, { message: 'Merchant name must be less than 50 characters' })
+  // merchantName?: string;
 }
