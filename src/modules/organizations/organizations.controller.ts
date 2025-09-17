@@ -15,7 +15,7 @@ import { OrganizationsService } from './organizations.service';
 import {
   AdminsOnly,
   AllRoles,
-  BusinessOnly,
+  BusinessAdminOnly,
 } from '@/modules/auth/decorators/roles.decorator';
 import { RoleProtected } from '@/modules/auth/decorators/auth.decorator';
 import GetOrganizationDto from '@/modules/organizations/dto/get-organization-res.dto';
@@ -30,7 +30,7 @@ import { type IAuthenticatedRequest } from '@/modules/auth/types/auth';
 @Controller(ModuleRoutes.Organizations.Main)
 export class OrganizationsController {
   constructor(private readonly organizationsService: OrganizationsService) {}
-  @BusinessOnly()
+  @BusinessAdminOnly()
   @Get(ModuleRoutes.Organizations.Paths.Members)
   getMembers(
     @Request() req: IAuthenticatedRequest,
@@ -43,7 +43,7 @@ export class OrganizationsController {
     );
   }
 
-  @BusinessOnly()
+  @BusinessAdminOnly()
   @Delete(':id/' + ModuleRoutes.Organizations.Paths.Members)
   @HttpCode(HttpStatus.NO_CONTENT)
   removeMember(
@@ -57,7 +57,7 @@ export class OrganizationsController {
     );
   }
 
-  @BusinessOnly()
+  @BusinessAdminOnly()
   @Patch(':id/' + ModuleRoutes.Organizations.Paths.MemberRole)
   updateMemberRole(
     @Param('id') updatedUserId: string,

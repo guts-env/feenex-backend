@@ -53,7 +53,11 @@ export type ProcessingStatus =
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
-export type UserRole = 'business_admin' | 'member' | 'personal_admin';
+export type UserRole =
+  | 'business_admin'
+  | 'manager'
+  | 'member'
+  | 'personal_admin';
 
 export interface Auth {
   created_at: Generated<Timestamp>;

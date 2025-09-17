@@ -50,8 +50,6 @@ export class OcrService {
         ),
       ).then((results) => results.map((result) => result[0]));
 
-      console.log(results, imageUrls);
-
       if (results.some((result) => result.error)) {
         await this.ocrRepository.update(ocrRecord.id, {
           status: 'failed',

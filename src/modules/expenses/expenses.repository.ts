@@ -152,6 +152,31 @@ export class ExpensesRepository extends BaseRepository {
         );
       }
 
+      if (roleName === 'manager') {
+        const today = new Date();
+        const startOfDay = new Date(
+          today.getFullYear(),
+          today.getMonth(),
+          today.getDate(),
+        );
+        const endOfDay = new Date(
+          today.getFullYear(),
+          today.getMonth(),
+          today.getDate() + 1,
+        );
+
+        expensesBaseQuery = expensesBaseQuery.where((eb) =>
+          eb.or([
+            eb('e.status', '!=', 'verified'),
+            eb.and([
+              eb('e.status', '=', 'verified'),
+              eb('e.verified_at', '>=', startOfDay),
+              eb('e.verified_at', '<', endOfDay),
+            ]),
+          ]),
+        );
+      }
+
       if (categoryIds && categoryIds.length > 0) {
         expensesBaseQuery = expensesBaseQuery.where(
           'e.category_id',

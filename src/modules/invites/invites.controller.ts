@@ -9,11 +9,11 @@ import {
 import { ModuleRoutes } from '@/common/constants/routes';
 import { InvitesService } from '@/modules/invites/invites.service';
 import CreateInviteDto from '@/modules/invites/dto/create-invite.dto';
-import { BusinessOnly } from '@/modules/auth/decorators/roles.decorator';
+import { BusinessAdminOnly } from '@/modules/auth/decorators/roles.decorator';
 import { RoleProtected } from '@/modules/auth/decorators/auth.decorator';
 import { type IAuthenticatedRequest } from '@/modules/auth/types/auth';
 
-@BusinessOnly()
+@BusinessAdminOnly()
 @RoleProtected()
 @Controller(ModuleRoutes.Invites.Main)
 export class InvitesController {
