@@ -21,6 +21,7 @@ export const ModuleRoutes = {
     Paths: {
       Auto: 'auto',
       Verify: 'verify',
+      Total: 'total',
     },
   },
   Invites: {

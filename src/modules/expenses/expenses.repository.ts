@@ -1,8 +1,13 @@
 import { Injectable } from '@nestjs/common';
+import { SelectQueryBuilder, sql } from 'kysely';
 import { BaseRepository } from '@/common/modules/base/base.repository';
 import { CreateExpenseDto } from '@/modules/expenses/dto/create-expense.dto';
 import UpdateExpenseDto from '@/modules/expenses/dto/update-expense.dto';
 import GetExpensesDto from '@/modules/expenses/dto/get-expenses.dto';
+import {
+  GetTotalExpensesDto,
+  GetTotalExpensesResDto,
+} from '@/modules/expenses/dto/get-total-expenses.dto';
 import {
   type IExpenseItem,
   type IExpenseOtherDetails,
@@ -15,7 +20,7 @@ import {
   type ProcessingStatus,
   UserRole,
 } from '@/database/types/db';
-import { SelectQueryBuilder } from 'kysely';
+import { getCurrentMonth } from '@/utils/date.utils';
 
 @Injectable()
 export class ExpensesRepository extends BaseRepository {
@@ -246,7 +251,7 @@ export class ExpensesRepository extends BaseRepository {
       if (orderBy) {
         dbQuery = dbQuery.orderBy(`e.${orderBy.field}`, orderBy.order);
       } else {
-        dbQuery = dbQuery.orderBy('e.created_at', 'desc');
+        dbQuery = dbQuery.orderBy('e.date', 'desc');
       }
 
       if (offset !== undefined) {
@@ -453,6 +458,61 @@ export class ExpensesRepository extends BaseRepository {
         .where('id', '=', id)
         .where('organization_id', '=', orgId)
         .execute();
+    } catch (error) {
+      this.handleDatabaseError(error);
+    }
+  }
+
+  async getTotalExpenses(
+    orgId: string,
+    dto: GetTotalExpensesDto,
+  ): Promise<GetTotalExpensesResDto> {
+    try {
+      const startDate = dto.startDate
+        ? new Date(dto.startDate)
+        : getCurrentMonth().startDate;
+      const endDate = dto.endDate
+        ? new Date(dto.endDate)
+        : getCurrentMonth().endDate;
+
+      const result = await this.db
+        .selectFrom('expenses')
+        .select(({ fn }) => [
+          fn.sum<number>('amount').as('total_expenses'),
+          fn.count<number>('id').as('total_count'),
+          sql<number>`SUM(CASE WHEN status = 'verified' THEN amount ELSE 0 END)`.as(
+            'verified_total',
+          ),
+          sql<number>`SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END)`.as(
+            'unverified_total',
+          ),
+          sql<number>`COUNT(CASE WHEN source = 'ocr' THEN 1 END)`.as(
+            'receipts_processed',
+          ),
+        ])
+        .where('organization_id', '=', orgId)
+        .where('date', '>=', startDate)
+        .where('date', '<=', endDate)
+        .executeTakeFirst()
+        .then(
+          (result) =>
+            result ?? {
+              total_expenses: 0,
+              total_count: 0,
+              verified_total: 0,
+              unverified_total: 0,
+              receipts_processed: 0,
+            },
+        );
+
+      return {
+        total: Number(result.total_expenses || 0),
+        count: Number(result.total_count || 0),
+        verified: Number(result.verified_total || 0),
+        unverified: Number(result.unverified_total || 0),
+        receiptsProcessed: Number(result.receipts_processed || 0),
+        dateRange: { startDate, endDate },
+      };
     } catch (error) {
       this.handleDatabaseError(error);
     }

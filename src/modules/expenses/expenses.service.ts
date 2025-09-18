@@ -17,6 +17,10 @@ import {
 } from '@/modules/expenses/dto/create-expense.dto';
 import UpdateExpenseDto from '@/modules/expenses/dto/update-expense.dto';
 import GetExpenseResDto from '@/modules/expenses/dto/get-expense-res.dto';
+import {
+  GetTotalExpensesDto,
+  GetTotalExpensesResDto,
+} from '@/modules/expenses/dto/get-total-expenses.dto';
 import { QueueService } from '@/modules/queue/queue.service';
 import ExpenseEventsGateway from '@/modules/sockets/expense-events.gateway';
 import { UserRole, type ProcessingStatus } from '@/database/types/db';
@@ -196,5 +200,13 @@ export class ExpensesService {
     });
 
     return plainToInstance(GetExpenseResDto, deletedExpense);
+  }
+
+  async getTotalExpenses(
+    orgId: string,
+    dto: GetTotalExpensesDto,
+  ): Promise<GetTotalExpensesResDto> {
+    const result = await this.expensesRepository.getTotalExpenses(orgId, dto);
+    return plainToInstance(GetTotalExpensesResDto, result);
   }
 }

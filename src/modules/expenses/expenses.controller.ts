@@ -15,7 +15,10 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ThrottleLimits, ThrottleNames } from '@/config/throttle.config';
-import { AllRoles } from '@/modules/auth/decorators/roles.decorator';
+import {
+  AllRoles,
+  BusinessAdminOnly,
+} from '@/modules/auth/decorators/roles.decorator';
 import { RoleProtected } from '@/modules/auth/decorators/auth.decorator';
 import { CurrentOrganization } from '@/common/decorators/current-org.decorator';
 import { ExpensesService } from '@/modules/expenses/expenses.service';
@@ -26,6 +29,10 @@ import {
 import GetExpensesDto from '@/modules/expenses/dto/get-expenses.dto';
 import UpdateExpenseDto from '@/modules/expenses/dto/update-expense.dto';
 import GetExpenseResDto from '@/modules/expenses/dto/get-expense-res.dto';
+import {
+  GetTotalExpensesDto,
+  GetTotalExpensesResDto,
+} from '@/modules/expenses/dto/get-total-expenses.dto';
 import { type IAuthenticatedRequest } from '@/modules/auth/types/auth';
 
 @AllRoles()
@@ -43,6 +50,19 @@ export class ExpensesController {
     return this.expensesService.getExpenses(
       req.user.organization.id,
       req.user.role.name,
+      query,
+    );
+  }
+
+  @BusinessAdminOnly()
+  @Get(ModuleRoutes.Expenses.Paths.Total)
+  @HttpCode(HttpStatus.OK)
+  getTotalExpenses(
+    @Request() req: IAuthenticatedRequest,
+    @Query() query: GetTotalExpensesDto,
+  ): Promise<GetTotalExpensesResDto> {
+    return this.expensesService.getTotalExpenses(
+      req.user.organization.id,
       query,
     );
   }
