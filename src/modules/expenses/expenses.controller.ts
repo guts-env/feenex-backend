@@ -13,6 +13,8 @@ import {
   Query,
   Request,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
+import { ThrottleLimits, ThrottleNames } from '@/config/throttle.config';
 import { AllRoles } from '@/modules/auth/decorators/roles.decorator';
 import { RoleProtected } from '@/modules/auth/decorators/auth.decorator';
 import { CurrentOrganization } from '@/common/decorators/current-org.decorator';
@@ -59,6 +61,7 @@ export class ExpensesController {
   }
 
   @Post(ModuleRoutes.Expenses.Paths.Auto)
+  @Throttle(ThrottleLimits[ThrottleNames.AUTO_EXPENSE])
   @HttpCode(HttpStatus.ACCEPTED)
   createAutoExpense(
     @Request() req: IAuthenticatedRequest,

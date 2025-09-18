@@ -16,6 +16,7 @@ async function bootstrap() {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
 
+  app.set('trust proxy', 1);
   app.set('query parser', 'extended');
   app.use(cookieParser());
   app.use(helmet());

@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
 import { REDIS_URL_CONFIG_KEY } from '@/config/keys.config';
+import { THROTTLE_CONFIG } from '@/config/throttle.config';
 import AwsConfig from '@/config/aws.config';
 import GcpConfig from '@/config/gcp.config';
 import { AuthModule } from '@/modules/auth/auth.module';
@@ -22,13 +23,7 @@ import { ReportsModule } from '@/modules/reports/reports.module';
       isGlobal: true,
       load: [AwsConfig, GcpConfig],
     }),
-    ThrottlerModule.forRoot([
-      {
-        name: 'default',
-        ttl: 60 * 1000,
-        limit: 60,
-      },
-    ]),
+    ThrottlerModule.forRoot(THROTTLE_CONFIG),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

@@ -6,6 +6,8 @@ import {
   Post,
   Request,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
+import { ThrottleLimits, ThrottleNames } from '@/config/throttle.config';
 import { ModuleRoutes } from '@/common/constants/routes';
 import { InvitesService } from '@/modules/invites/invites.service';
 import CreateInviteDto from '@/modules/invites/dto/create-invite.dto';
@@ -20,6 +22,7 @@ export class InvitesController {
   constructor(private readonly invitesService: InvitesService) {}
 
   @Post()
+  @Throttle(ThrottleLimits[ThrottleNames.CREATE_INVITE])
   @HttpCode(HttpStatus.CREATED)
   createInvite(
     @Request() req: IAuthenticatedRequest,

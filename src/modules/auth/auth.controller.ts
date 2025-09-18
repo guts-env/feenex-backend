@@ -11,7 +11,9 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { type Response } from 'express';
+import { ThrottleLimits, ThrottleNames } from '@/config/throttle.config';
 import { ModuleRoutes } from '@/common/constants/routes';
 import { LocalAuthGuard } from '@/modules/auth/guards/local-auth.guard';
 import { AuthService } from '@/modules/auth/auth.service';
@@ -32,6 +34,7 @@ export class AuthController {
   ) {}
 
   @Post(ModuleRoutes.Auth.Paths.Register)
+  @Throttle(ThrottleLimits[ThrottleNames.AUTH_REGISTER])
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() userRegisterDto: UserRegisterDto) {
     await this.authService.register(userRegisterDto);
@@ -39,12 +42,14 @@ export class AuthController {
   }
 
   @Post(ModuleRoutes.Auth.Paths.AcceptInvite)
+  @Throttle(ThrottleLimits[ThrottleNames.INVITE_ACCEPT])
   @HttpCode(HttpStatus.CREATED)
   async registerInvitedUser(@Body() inviteMemberDto: AcceptInviteDto) {
     await this.authService.registerInvitedUser(inviteMemberDto);
   }
 
   @Post(ModuleRoutes.Auth.Paths.RequestResetPassword)
+  @Throttle(ThrottleLimits[ThrottleNames.REQUEST_RESET_PASSWORD])
   @HttpCode(HttpStatus.OK)
   async requestResetPassword(
     @Body() resetPasswordDto: RequestResetPasswordDto,
@@ -58,6 +63,7 @@ export class AuthController {
   }
 
   @Patch(ModuleRoutes.Auth.Paths.ResetPassword)
+  @Throttle(ThrottleLimits[ThrottleNames.RESET_PASSWORD])
   @HttpCode(HttpStatus.OK)
   resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto);
@@ -65,6 +71,7 @@ export class AuthController {
 
   @Authenticated()
   @Patch(ModuleRoutes.Auth.Paths.UpdatePassword)
+  @Throttle(ThrottleLimits[ThrottleNames.UPDATE_PASSWORD])
   @HttpCode(HttpStatus.OK)
   updatePassword(@Body() updatePasswordDto: UpdatePasswordDto) {
     return this.authService.updatePassword(updatePasswordDto);
@@ -72,6 +79,7 @@ export class AuthController {
 
   @UseGuards(LocalAuthGuard)
   @Post(ModuleRoutes.Auth.Paths.Login)
+  @Throttle(ThrottleLimits[ThrottleNames.AUTH_STRICT])
   @HttpCode(HttpStatus.OK)
   async login(
     @Request() req: IAuthenticatedRequest,
@@ -87,6 +95,7 @@ export class AuthController {
   }
 
   @Get(ModuleRoutes.Auth.Paths.Refresh)
+  @Throttle(ThrottleLimits[ThrottleNames.DEFAULT])
   @HttpCode(HttpStatus.OK)
   async refresh(
     @Request() req: IAuthenticatedRequest,
@@ -109,6 +118,7 @@ export class AuthController {
 
   @Authenticated()
   @Post(ModuleRoutes.Auth.Paths.Logout)
+  @Throttle(ThrottleLimits[ThrottleNames.DEFAULT])
   @HttpCode(HttpStatus.OK)
   async logout(
     @Request() req: IAuthenticatedRequest,
@@ -130,6 +140,7 @@ export class AuthController {
 
   @Authenticated()
   @Post(ModuleRoutes.Auth.Paths.LogoutAllDevices)
+  @Throttle(ThrottleLimits[ThrottleNames.DEFAULT])
   @HttpCode(HttpStatus.OK)
   logoutAllDevices(
     @Request() req: IAuthenticatedRequest,
