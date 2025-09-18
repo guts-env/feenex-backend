@@ -4,7 +4,10 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
-import { REDIS_URL_CONFIG_KEY } from '@/config/keys.config';
+import {
+  NODE_ENV_CONFIG_KEY,
+  REDIS_URL_CONFIG_KEY,
+} from '@/config/keys.config';
 import { THROTTLE_CONFIG } from '@/config/throttle.config';
 import AwsConfig from '@/config/aws.config';
 import GcpConfig from '@/config/gcp.config';
@@ -28,7 +31,10 @@ import { ReportsModule } from '@/modules/reports/reports.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        throttlers: THROTTLE_CONFIG,
+        throttlers:
+          configService.get<string>(NODE_ENV_CONFIG_KEY) === 'production'
+            ? THROTTLE_CONFIG
+            : [],
         storage: new ThrottlerStorageRedisService(
           configService.get<string>(REDIS_URL_CONFIG_KEY),
         ),
@@ -42,7 +48,7 @@ import { ReportsModule } from '@/modules/reports/reports.module';
           url: configService.get<string>(REDIS_URL_CONFIG_KEY),
         },
         defaultJobOptions: {
-          attempts: 3,
+          attempts: 2,
           backoff: {
             type: 'exponential',
             delay: 2000,

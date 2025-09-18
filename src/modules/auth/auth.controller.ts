@@ -95,7 +95,6 @@ export class AuthController {
   }
 
   @Get(ModuleRoutes.Auth.Paths.Refresh)
-  @Throttle(ThrottleLimits[ThrottleNames.DEFAULT])
   @HttpCode(HttpStatus.OK)
   async refresh(
     @Request() req: IAuthenticatedRequest,
@@ -118,7 +117,6 @@ export class AuthController {
 
   @Authenticated()
   @Post(ModuleRoutes.Auth.Paths.Logout)
-  @Throttle(ThrottleLimits[ThrottleNames.DEFAULT])
   @HttpCode(HttpStatus.OK)
   async logout(
     @Request() req: IAuthenticatedRequest,
@@ -140,7 +138,6 @@ export class AuthController {
 
   @Authenticated()
   @Post(ModuleRoutes.Auth.Paths.LogoutAllDevices)
-  @Throttle(ThrottleLimits[ThrottleNames.DEFAULT])
   @HttpCode(HttpStatus.OK)
   logoutAllDevices(
     @Request() req: IAuthenticatedRequest,

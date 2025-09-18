@@ -19,73 +19,73 @@ export const THROTTLE_CONFIG = [
     ttl: 60 * 1000, // 1 minute
     limit: 100,
   },
-  {
-    name: ThrottleNames.AUTH_STRICT,
-    ttl: 15 * 60 * 1000, // 15 minutes
-    limit: 5,
-  },
-  {
-    name: ThrottleNames.AUTH_REGISTER,
-    ttl: 60 * 60 * 1000, // 1 hour
-    limit: 3,
-  },
-  {
-    name: ThrottleNames.REQUEST_RESET_PASSWORD,
-    ttl: 60 * 60 * 1000, // 1 hour
-    limit: 3,
-  },
-  {
-    name: ThrottleNames.RESET_PASSWORD,
-    ttl: 60 * 60 * 1000, // 1 hour
-    limit: 3,
-  },
-  {
-    name: ThrottleNames.UPDATE_PASSWORD,
-    ttl: 60 * 60 * 1000, // 1 hour
-    limit: 3,
-  },
-  {
-    name: ThrottleNames.CREATE_INVITE,
-    ttl: 60 * 1000, // 1 minute
-    limit: 10,
-  },
-  {
-    name: ThrottleNames.INVITE_ACCEPT,
-    ttl: 60 * 60 * 1000, // 1 hour
-    limit: 10,
-  },
-  {
-    name: ThrottleNames.FILE_UPLOAD,
-    ttl: 60 * 1000, // 1 minute
-    limit: 20,
-  },
-  {
-    name: ThrottleNames.AUTO_EXPENSE,
-    ttl: 60 * 1000, // 1 minute
-    limit: 20,
-  },
-  {
-    name: ThrottleNames.INVITE_CREATE,
-    ttl: 60 * 1000, // 1 minute
-    limit: 10,
-  },
-  {
-    name: ThrottleNames.REPORT_GENERATION,
-    ttl: 60 * 1000, // 1 minute
-    limit: 20,
-  },
 ];
 
-export const ThrottleLimits = THROTTLE_CONFIG.reduce(
-  (acc, config) => {
-    const key = config.name.toUpperCase().replace(/-/g, '_');
-    acc[key] = {
-      [config.name]: {
-        limit: config.limit,
-        ttl: config.ttl,
-      },
-    };
-    return acc;
+export const ThrottleLimits = {
+  [ThrottleNames.AUTH_STRICT]: {
+    [ThrottleNames.AUTH_STRICT]: {
+      ttl: 15 * 60 * 1000, // 15 minutes
+      limit: 5,
+    },
   },
-  {} as Record<string, Record<string, { limit: number; ttl: number }>>,
-);
+  [ThrottleNames.AUTH_REGISTER]: {
+    [ThrottleNames.AUTH_REGISTER]: {
+      ttl: 60 * 60 * 1000, // 1 hour
+      limit: 3,
+    },
+  },
+  [ThrottleNames.REQUEST_RESET_PASSWORD]: {
+    [ThrottleNames.REQUEST_RESET_PASSWORD]: {
+      ttl: 60 * 60 * 1000, // 1 hour
+      limit: 3,
+    },
+  },
+  [ThrottleNames.RESET_PASSWORD]: {
+    [ThrottleNames.RESET_PASSWORD]: {
+      ttl: 60 * 60 * 1000, // 1 hour
+      limit: 3,
+    },
+  },
+  [ThrottleNames.UPDATE_PASSWORD]: {
+    [ThrottleNames.UPDATE_PASSWORD]: {
+      ttl: 60 * 60 * 1000, // 1 hour
+      limit: 3,
+    },
+  },
+  [ThrottleNames.CREATE_INVITE]: {
+    [ThrottleNames.CREATE_INVITE]: {
+      ttl: 60 * 1000, // 1 minute
+      limit: 10,
+    },
+  },
+  [ThrottleNames.INVITE_ACCEPT]: {
+    [ThrottleNames.INVITE_ACCEPT]: {
+      ttl: 60 * 60 * 1000, // 1 hour
+      limit: 10,
+    },
+  },
+  [ThrottleNames.FILE_UPLOAD]: {
+    [ThrottleNames.FILE_UPLOAD]: {
+      ttl: 60 * 1000, // 1 minute
+      limit: 20,
+    },
+  },
+  [ThrottleNames.AUTO_EXPENSE]: {
+    [ThrottleNames.AUTO_EXPENSE]: {
+      ttl: 60 * 1000, // 1 minute
+      limit: 20,
+    },
+  },
+  [ThrottleNames.INVITE_CREATE]: {
+    [ThrottleNames.INVITE_CREATE]: {
+      ttl: 60 * 1000, // 1 minute
+      limit: 10,
+    },
+  },
+  [ThrottleNames.REPORT_GENERATION]: {
+    [ThrottleNames.REPORT_GENERATION]: {
+      ttl: 60 * 1000, // 1 minute
+      limit: 20,
+    },
+  },
+};

@@ -50,26 +50,28 @@ export class OcrService {
         ),
       ).then((results) => results.map((result) => result[0]));
 
-      if (results.some((result) => result.error)) {
+      const errorMessage = results.find((result) => result.error)?.error
+        ?.message;
+      if (errorMessage) {
         await this.ocrRepository.update(ocrRecord.id, {
           status: 'failed',
-          errorMessage: results.find((result) => result.error)?.error?.message,
+          errorMessage,
         });
 
-        this.logger.error(
-          results.find((result) => result.error)?.error?.message,
-        );
+        this.logger.error(errorMessage);
 
-        throw new InternalServerErrorException(
-          'Something went wrong while extracting receipt data',
-        );
+        throw new InternalServerErrorException({
+          message: errorMessage,
+        });
       }
 
       const endTime = Date.now();
       const processingTimeMs = endTime - startTime;
 
       if (!results.some((result) => result.fullTextAnnotation?.text)) {
-        throw new BadRequestException('No text found in the image');
+        throw new BadRequestException({
+          message: 'No text found in the image',
+        });
       }
 
       await this.ocrRepository.update(ocrRecord.id, {
@@ -92,9 +94,14 @@ export class OcrService {
         errorMessage: error instanceof Error ? error.message : 'Unknown error',
       });
 
-      this.logger.error(error);
+      this.logger.error(
+        error instanceof Error ? error.message : 'Unknown error',
+      );
+
       throw new InternalServerErrorException(
-        'Something went wrong while extracting receipt data',
+        error instanceof Error
+          ? error.message
+          : 'Something went wrong while extracting receipt data',
       );
     }
   }
