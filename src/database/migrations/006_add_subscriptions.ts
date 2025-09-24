@@ -23,7 +23,6 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('category_id', 'uuid', (col) =>
       col.notNull().references('categories.id'),
     )
-    .addColumn('title', 'varchar(200)', (col) => col.notNull())
     .addColumn('merchant_name', 'varchar(200)', (col) => col.notNull())
     .addColumn('amount', sql`decimal(8,2)`, (col) => col.notNull())
     .addColumn('currency', sql`currency_code`, (col) =>

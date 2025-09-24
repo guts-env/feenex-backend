@@ -11,7 +11,6 @@ export interface IBaseRepositorySubscription extends IBaseRepositoryInterface {
     IBaseRepositoryCategory,
     'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'email'
   >;
-  title: string;
   merchant_name: string;
   amount: number;
   currency: CurrencyCode;

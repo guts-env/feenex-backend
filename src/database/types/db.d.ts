@@ -228,7 +228,6 @@ export interface Subscriptions {
   organization_id: string;
   start_date: Timestamp;
   status: Generated<SubscriptionStatus>;
-  title: string;
   updated_at: Generated<Timestamp>;
   updated_by: string;
   user_id: string;

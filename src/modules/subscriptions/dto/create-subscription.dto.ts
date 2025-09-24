@@ -15,10 +15,6 @@ export class CreateSubscriptionDto {
   @IsUUID('4', { message: 'Category ID must be a valid UUID v4.' })
   categoryId!: string;
 
-  @IsNotEmpty({ message: 'Title is required.' })
-  @IsString({ message: 'Title must be a string.' })
-  title!: string;
-
   @IsNotEmpty({ message: 'Merchant name is required.' })
   @IsString({ message: 'Merchant name must be a string.' })
   merchantName!: string;

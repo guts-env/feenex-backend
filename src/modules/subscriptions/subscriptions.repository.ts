@@ -21,7 +21,6 @@ export class SubscriptionsRepository extends BaseRepository {
       's.organization_id',
       's.user_id',
       's.category_id',
-      's.title',
       's.merchant_name',
       's.amount',
       's.currency',
@@ -55,7 +54,6 @@ export class SubscriptionsRepository extends BaseRepository {
   ): IBaseRepositorySubscription {
     return {
       id: row['id'] as string,
-      title: row['title'] as string,
       merchant_name: row['merchant_name'] as string,
       amount: row['amount'] ? Number(row['amount']) : 0,
       currency: row['currency'] as CurrencyCode,
@@ -92,7 +90,6 @@ export class SubscriptionsRepository extends BaseRepository {
   async create(orgId: string, userId: string, dto: CreateSubscriptionDto) {
     const {
       categoryId,
-      title,
       merchantName,
       amount,
       currency,
@@ -116,7 +113,6 @@ export class SubscriptionsRepository extends BaseRepository {
           organization_id: orgId,
           user_id: userId,
           category_id: categoryId,
-          title,
           merchant_name: merchantName,
           amount,
           currency: (currency as CurrencyCode) || 'PHP',
@@ -133,7 +129,6 @@ export class SubscriptionsRepository extends BaseRepository {
         })
         .returning([
           'id',
-          'title',
           'merchant_name',
           'amount',
           'frequency',
@@ -204,7 +199,6 @@ export class SubscriptionsRepository extends BaseRepository {
       if (search) {
         subscriptionsBaseQuery = subscriptionsBaseQuery.where((eb) =>
           eb.or([
-            eb('s.title', 'ilike', `%${search}%`),
             eb('s.merchant_name', 'ilike', `%${search}%`),
             eb('s.description', 'ilike', `%${search}%`),
           ]),
@@ -271,7 +265,6 @@ export class SubscriptionsRepository extends BaseRepository {
   ): Promise<IBaseRepositorySubscription> {
     const {
       categoryId,
-      title,
       merchantName,
       amount,
       currency,
@@ -287,7 +280,6 @@ export class SubscriptionsRepository extends BaseRepository {
     const updateObj = {};
 
     if (categoryId !== undefined) updateObj['category_id'] = categoryId;
-    if (title !== undefined) updateObj['title'] = title;
     if (merchantName !== undefined) updateObj['merchant_name'] = merchantName;
     if (amount !== undefined) updateObj['amount'] = amount;
     if (currency !== undefined) updateObj['currency'] = currency;
@@ -354,7 +346,7 @@ export class SubscriptionsRepository extends BaseRepository {
   async getActiveSubscriptionsBilling(orgId: string) {
     const query = await this.db
       .selectFrom('subscriptions')
-      .select(['title', 'amount', 'billing_date'])
+      .select(['merchant_name', 'amount', 'billing_date'])
       .where('organization_id', '=', orgId)
       .where('status', '=', 'active')
       .orderBy('billing_date', 'asc')
@@ -371,7 +363,6 @@ export class SubscriptionsRepository extends BaseRepository {
       .selectFrom('subscriptions')
       .select([
         'id',
-        'title',
         'merchant_name',
         'amount',
         'currency',
