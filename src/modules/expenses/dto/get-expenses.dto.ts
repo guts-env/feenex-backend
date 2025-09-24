@@ -1,5 +1,6 @@
 import {
   ArrayNotEmpty,
+  IsBoolean,
   IsDate,
   IsDecimal,
   IsIn,
@@ -60,6 +61,16 @@ export default class GetExpensesDto extends PaginatedDto<Expenses> {
   @ArrayNotEmpty()
   @IsIn(['draft', 'pending', 'rejected', 'verified'], { each: true })
   statuses?: ExpenseStatus[];
+
+  @IsOptional()
+  @Transform(({ value }) => value === 'true')
+  @IsBoolean()
+  isVat?: boolean;
+
+  @IsOptional()
+  @Transform(({ value }) => value === 'true')
+  @IsBoolean()
+  isSubscription?: boolean;
 
   // @IsOptional()
   // @IsString()

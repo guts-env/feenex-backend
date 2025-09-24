@@ -106,7 +106,7 @@ export class ExpensesService {
         source: 'ocr',
         merchantName: 'Processing...',
         amount: 0.0,
-        date: new Date().toISOString(),
+        invoiceDate: new Date().toISOString(),
         processingStatus: 'processing',
         ...dto,
       });
@@ -132,6 +132,7 @@ export class ExpensesService {
       roleName,
       query,
     );
+
     return plainToInstance(GetExpensesResDto, {
       count: res.count,
       data: res.data,

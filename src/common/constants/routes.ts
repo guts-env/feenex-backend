@@ -37,6 +37,14 @@ export const ModuleRoutes = {
   Reports: {
     Main: 'reports',
   },
+  Subscriptions: {
+    Main: 'subscriptions',
+    Paths: {
+      Stats: 'stats',
+      ActiveBilling: 'active-billing',
+      DueForBilling: 'due-for-billing',
+    },
+  },
   Upload: {
     Main: 'upload',
     Paths: {

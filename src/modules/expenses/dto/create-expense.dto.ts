@@ -1,5 +1,6 @@
 import {
   ArrayNotEmpty,
+  IsBoolean,
   IsDateString,
   IsIn,
   IsNotEmpty,
@@ -7,6 +8,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -30,16 +32,6 @@ export class ExpenseItemDto {
   price!: number;
 }
 
-export class ExpenseOtherDetailDto {
-  @IsNotEmpty()
-  @IsString()
-  key!: string;
-
-  @IsNotEmpty()
-  @IsString()
-  value!: string;
-}
-
 class BaseExpenseDto {
   @IsOptional()
   @IsString()
@@ -53,11 +45,6 @@ class BaseExpenseDto {
   @ValidateNested({ each: true })
   @Type(() => ExpenseItemDto)
   items?: ExpenseItemDto[];
-
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => ExpenseOtherDetailDto)
-  otherDetails?: ExpenseOtherDetailDto[];
 }
 
 export type IExpenseValue = CreateExpenseDto[keyof CreateExpenseDto];
@@ -72,17 +59,30 @@ export class CreateExpenseDto extends BaseExpenseDto {
   @IsUUID('4')
   categoryId!: string;
 
+  @IsOptional()
+  @IsUUID('4')
+  subscriptionId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isSubscription?: boolean;
+
   @IsNotEmpty()
   @IsString()
   merchantName!: string;
 
   @IsNotEmpty()
   @IsNumber({ maxDecimalPlaces: 2 })
+  @Max(999999.99)
   amount!: number;
 
   @IsNotEmpty()
   @IsDateString()
-  date!: string;
+  invoiceDate!: string;
+
+  @IsOptional()
+  @IsDateString()
+  paymentDate?: string;
 
   @IsOptional()
   @IsString({ each: true })
@@ -99,6 +99,18 @@ export class CreateExpenseDto extends BaseExpenseDto {
   @IsOptional()
   @IsUUID('4')
   llmResultId?: string;
+
+  @IsOptional()
+  @IsString()
+  orNumber?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isVat?: boolean;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  vat?: number;
 }
 
 export class CreateManualExpenseDto extends BaseExpenseDto {
@@ -112,16 +124,41 @@ export class CreateManualExpenseDto extends BaseExpenseDto {
 
   @IsNotEmpty()
   @IsNumber({ maxDecimalPlaces: 2 })
+  @Max(999999.99)
   amount!: number;
 
   @IsNotEmpty()
   @IsDateString()
-  date!: string;
+  invoiceDate!: string;
+
+  @IsOptional()
+  @IsDateString()
+  paymentDate?: string;
 
   @IsOptional()
   @ArrayNotEmpty()
   @IsString({ each: true })
   photos?: string[];
+
+  @IsOptional()
+  @IsUUID('4')
+  subscriptionId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isSubscription?: boolean;
+
+  @IsOptional()
+  @IsString()
+  orNumber?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isVat?: boolean;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  vat?: number;
 }
 
 export class CreateOcrExpenseDto extends BaseExpenseDto {

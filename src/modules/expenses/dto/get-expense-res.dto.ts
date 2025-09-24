@@ -15,17 +15,13 @@ class ExpenseItemResDto {
   price!: number;
 }
 
-class ExpenseOtherDetailResDto {
-  @Expose()
-  key!: string;
-
-  @Expose()
-  value!: string;
-}
-
 export default class GetExpenseResDto {
   @Expose()
   id!: string;
+
+  @Expose()
+  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.or_number)
+  orNumber?: string;
 
   @Expose()
   @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.category)
@@ -39,6 +35,14 @@ export default class GetExpenseResDto {
   status!: ExpenseStatus;
 
   @Expose()
+  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.is_vat)
+  isVat?: boolean;
+
+  @Expose()
+  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.vat)
+  vat?: number;
+
+  @Expose()
   @Transform(
     ({ obj }: { obj: IBaseRepositoryExpense }) => obj.processing_status,
   )
@@ -49,7 +53,12 @@ export default class GetExpenseResDto {
   merchantName!: string;
 
   @Expose()
-  date!: string;
+  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.invoice_date)
+  invoiceDate!: string;
+
+  @Expose()
+  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.payment_date)
+  paymentDate!: string;
 
   @Expose()
   description?: string;
@@ -60,11 +69,6 @@ export default class GetExpenseResDto {
   @Expose()
   @Type(() => ExpenseItemResDto)
   items?: ExpenseItemResDto[];
-
-  @Expose()
-  @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.other_details)
-  @Type(() => ExpenseOtherDetailResDto)
-  otherDetails?: ExpenseOtherDetailResDto[];
 
   @Expose()
   @Transform(({ obj }: { obj: IBaseRepositoryExpense }) => obj.created_by)

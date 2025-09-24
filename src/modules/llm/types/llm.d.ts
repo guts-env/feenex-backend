@@ -1,15 +1,16 @@
-import {
-  IExpenseItem,
-  IExpenseOtherDetails,
-} from '@/modules/expenses/types/expenses';
+import { IExpenseItem } from '@/modules/expenses/types/expenses';
 
 export interface IExtractedData {
   amount: number;
   merchantName: string;
   items: IExpenseItem[];
-  otherDetails: IExpenseOtherDetails[];
-  date: string;
+  invoiceDate: string;
+  paymentDate: string;
   category: string;
+  categoryId?: string;
+  orNumber: string | null;
+  isVat: boolean;
+  vat: number | null;
 }
 
 export interface IRepositoryLlmResult extends IBaseRepositoryInterface {

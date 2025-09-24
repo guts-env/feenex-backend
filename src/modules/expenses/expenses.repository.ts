@@ -10,7 +10,6 @@ import {
 } from '@/modules/expenses/dto/get-total-expenses.dto';
 import {
   type IExpenseItem,
-  type IExpenseOtherDetails,
   type IBaseRepositoryExpense,
 } from '@/modules/expenses/types/expenses';
 import {
@@ -29,14 +28,17 @@ export class ExpensesRepository extends BaseRepository {
       'e.id',
       'e.amount',
       'e.items',
-      'e.other_details',
       'e.source',
       'e.status',
       'e.processing_status',
       'e.merchant_name',
       'e.currency',
-      'e.date',
+      'e.invoice_date',
+      'e.payment_date',
       'e.description',
+      'e.or_number',
+      'e.is_vat',
+      'e.vat',
       'e.photos',
       'e.created_at',
       'e.updated_at',
@@ -79,7 +81,11 @@ export class ExpensesRepository extends BaseRepository {
       id: row['id'] as string,
       amount: row['amount'] ? Number(row['amount']) : 1.0,
       currency: row['currency'] as CurrencyCode,
-      date: row['date'] as Date,
+      invoice_date: row['invoice_date'] as Date,
+      payment_date: row['payment_date'] as Date,
+      or_number: row['or_number'] as string | null,
+      is_vat: row['is_vat'] as boolean | null,
+      vat: row['vat'] ? Number(row['vat']) : null,
       description: row['description'] as string | null,
       merchant_name: row['merchant_name'] as string,
       photos: row['photos'] as string[] | null,
@@ -94,7 +100,6 @@ export class ExpensesRepository extends BaseRepository {
         name: row['category_name'] as string,
       },
       items: row['items'] as IExpenseItem[],
-      other_details: row['other_details'] as IExpenseOtherDetails[],
       created_by: {
         id: row['created_by'] as string,
         first_name: row['created_by_first_name'] as string,
@@ -135,6 +140,8 @@ export class ExpensesRepository extends BaseRepository {
       maxAmount,
       statuses,
       search,
+      isVat,
+      isSubscription,
       offset,
       limit,
       orderBy,
@@ -207,11 +214,19 @@ export class ExpensesRepository extends BaseRepository {
       // }
 
       if (startDate) {
-        expensesBaseQuery = expensesBaseQuery.where('e.date', '>=', startDate);
+        expensesBaseQuery = expensesBaseQuery.where(
+          'e.payment_date',
+          '>=',
+          startDate,
+        );
       }
 
       if (endDate) {
-        expensesBaseQuery = expensesBaseQuery.where('e.date', '<=', endDate);
+        expensesBaseQuery = expensesBaseQuery.where(
+          'e.payment_date',
+          '<=',
+          endDate,
+        );
       }
 
       if (minAmount) {
@@ -239,7 +254,20 @@ export class ExpensesRepository extends BaseRepository {
           eb.or([
             eb('e.merchant_name', 'ilike', `%${search}%`),
             eb('e.description', 'ilike', `%${search}%`),
+            eb('e.or_number', 'ilike', `%${search}%`),
           ]),
+        );
+      }
+
+      if (isVat !== undefined) {
+        expensesBaseQuery = expensesBaseQuery.where('e.is_vat', '=', isVat);
+      }
+
+      if (isSubscription !== undefined) {
+        expensesBaseQuery = expensesBaseQuery.where(
+          'e.is_subscription',
+          '=',
+          isSubscription,
         );
       }
 
@@ -251,7 +279,7 @@ export class ExpensesRepository extends BaseRepository {
       if (orderBy) {
         dbQuery = dbQuery.orderBy(`e.${orderBy.field}`, orderBy.order);
       } else {
-        dbQuery = dbQuery.orderBy('e.date', 'desc');
+        dbQuery = dbQuery.orderBy('e.created_at', 'desc');
       }
 
       if (offset !== undefined) {
@@ -295,10 +323,10 @@ export class ExpensesRepository extends BaseRepository {
       categoryId,
       merchantName,
       amount,
-      date,
+      invoiceDate,
+      paymentDate,
       description,
       items,
-      otherDetails,
       photos,
       currency,
       ocrResultId,
@@ -306,6 +334,11 @@ export class ExpensesRepository extends BaseRepository {
       source,
       processingStatus,
       status,
+      orNumber,
+      isVat,
+      vat,
+      verifiedBy,
+      verifiedAt,
     } = payload;
 
     try {
@@ -318,16 +351,21 @@ export class ExpensesRepository extends BaseRepository {
           merchant_name: merchantName,
           amount,
           currency: (currency as CurrencyCode) || 'PHP',
-          date,
+          invoice_date: invoiceDate,
+          payment_date: paymentDate || invoiceDate,
           description: description || null,
           items: items ? JSON.stringify(items) : null,
-          other_details: otherDetails ? JSON.stringify(otherDetails) : null,
           source,
           status,
           processing_status: processingStatus,
           photos: photos || null,
           ocr_result_id: ocrResultId || null,
           llm_result_id: llmResultId || null,
+          or_number: orNumber || null,
+          is_vat: isVat || null,
+          vat: vat || null,
+          verified_by: verifiedBy,
+          verified_at: verifiedAt,
           created_by: userId,
           updated_by: userId,
         })
@@ -353,13 +391,16 @@ export class ExpensesRepository extends BaseRepository {
       categoryId,
       merchantName,
       amount,
-      date,
+      invoiceDate,
+      paymentDate,
       description,
       items,
-      otherDetails,
       photos,
       status,
       processingStatus,
+      orNumber,
+      isVat,
+      vat,
     } = dto;
 
     const updateObj = {};
@@ -367,21 +408,20 @@ export class ExpensesRepository extends BaseRepository {
     if (categoryId !== undefined) updateObj['category_id'] = categoryId;
     if (merchantName !== undefined) updateObj['merchant_name'] = merchantName;
     if (amount !== undefined) updateObj['amount'] = amount;
-    if (date !== undefined) updateObj['date'] = date;
+    if (invoiceDate !== undefined) updateObj['invoice_date'] = invoiceDate;
+    if (paymentDate !== undefined) updateObj['payment_date'] = paymentDate;
     if (description !== undefined) updateObj['description'] = description;
     if (items !== undefined) updateObj['items'] = JSON.stringify(items);
-    if (otherDetails !== undefined)
-      updateObj['other_details'] = JSON.stringify(otherDetails);
     if (photos !== undefined) updateObj['photos'] = photos;
+    if (orNumber !== undefined) updateObj['or_number'] = orNumber;
+    if (isVat !== undefined) updateObj['is_vat'] = isVat;
+    if (vat !== undefined) updateObj['vat'] = vat;
     if (status !== undefined) updateObj['status'] = status;
     if (status === 'verified') {
       updateObj['verified_by'] = userId;
-    } else {
-      updateObj['verified_by'] = null;
-    }
-    if (status === 'verified') {
       updateObj['verified_at'] = new Date();
     } else {
+      updateObj['verified_by'] = null;
       updateObj['verified_at'] = null;
     }
     if (processingStatus !== undefined)
@@ -491,8 +531,8 @@ export class ExpensesRepository extends BaseRepository {
           ),
         ])
         .where('organization_id', '=', orgId)
-        .where('date', '>=', startDate)
-        .where('date', '<=', endDate)
+        .where('payment_date', '>=', startDate)
+        .where('payment_date', '<=', endDate)
         .executeTakeFirst()
         .then(
           (result) =>

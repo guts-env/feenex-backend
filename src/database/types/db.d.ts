@@ -51,6 +51,10 @@ export type ProcessingStatus =
   | 'pending'
   | 'processing';
 
+export type RecurringFrequency = 'daily' | 'monthly' | 'weekly' | 'yearly';
+
+export type SubscriptionStatus = 'active' | 'cancelled' | 'suspended';
+
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export type UserRole =
@@ -87,23 +91,28 @@ export interface Expenses {
   created_at: Generated<Timestamp>;
   created_by: string;
   currency: Generated<CurrencyCode>;
-  date: Timestamp;
   description: string | null;
   id: Generated<string>;
   import_id: string | null;
+  invoice_date: Timestamp;
+  is_subscription: Generated<boolean>;
+  is_vat: boolean | null;
   items: Json | null;
   llm_result_id: string | null;
   merchant_name: string;
   ocr_result_id: string | null;
+  or_number: string | null;
   organization_id: string;
-  other_details: Json | null;
+  payment_date: Timestamp;
   photos: string[] | null;
   processing_status: Generated<ProcessingStatus>;
   source: ExpenseSource;
   status: Generated<ExpenseStatus>;
+  subscription_id: string | null;
   updated_at: Generated<Timestamp>;
   updated_by: string;
   user_id: string;
+  vat: Numeric | null;
   verified_at: Timestamp | null;
   verified_by: string | null;
 }
@@ -203,6 +212,29 @@ export interface Roles {
   updated_at: Generated<Timestamp>;
 }
 
+export interface Subscriptions {
+  amount: Numeric;
+  billing_date: Timestamp;
+  category_id: string;
+  created_at: Generated<Timestamp>;
+  created_by: string;
+  currency: Generated<CurrencyCode>;
+  description: string | null;
+  end_date: Timestamp | null;
+  frequency: RecurringFrequency;
+  id: Generated<string>;
+  is_vat: boolean | null;
+  merchant_name: string;
+  organization_id: string;
+  start_date: Timestamp;
+  status: Generated<SubscriptionStatus>;
+  title: string;
+  updated_at: Generated<Timestamp>;
+  updated_by: string;
+  user_id: string;
+  vat: Numeric | null;
+}
+
 export interface UserOrganizations {
   created_at: Generated<Timestamp>;
   id: Generated<string>;
@@ -236,6 +268,7 @@ export interface DB {
   permissions: Permissions;
   role_permissions: RolePermissions;
   roles: Roles;
+  subscriptions: Subscriptions;
   user_organizations: UserOrganizations;
   users: Users;
 }

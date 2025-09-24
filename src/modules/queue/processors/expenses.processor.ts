@@ -79,6 +79,9 @@ export class ExpensesConsumer extends WorkerHost {
       orgId,
       {
         ...job.data.analyzedData,
+        orNumber: job.data.analyzedData?.orNumber || undefined,
+        isVat: job.data.analyzedData?.isVat || undefined,
+        vat: job.data.analyzedData?.vat || undefined,
         ocrResultId: job.data.ocrResultId,
         llmResultId: job.data.llmResultId,
         processingStatus: 'completed',

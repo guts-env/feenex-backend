@@ -20,6 +20,7 @@ import { ExpensesModule } from '@/modules/expenses/expenses.module';
 import { CategoriesModule } from '@/modules/categories/categories.module';
 import { InvitesModule } from '@/modules/invites/invites.module';
 import { ReportsModule } from '@/modules/reports/reports.module';
+import { SubscriptionsModule } from '@/modules/subscriptions/subscriptions.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { ReportsModule } from '@/modules/reports/reports.module';
     PermissionsModule,
     UploadModule,
     ExpensesModule,
+    SubscriptionsModule,
     CategoriesModule,
     InvitesModule,
     ReportsModule,

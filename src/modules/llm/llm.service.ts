@@ -7,21 +7,29 @@ import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { OPENAI_API_KEY_CONFIG_KEY } from '@/config/keys.config';
 import { LLmRepository } from '@/modules/llm/llm.repository';
+import { CategoriesService } from '@/modules/categories/categories.service';
+import { DEFAULT_CATEGORY_ID_CONFIG_KEY } from '@/config/keys.config';
 import { type IExtractedData } from '@/modules/llm/types/llm';
+import BaseCategoryResDto from '@/modules/categories/dto/base-category-res.dto';
 
 @Injectable()
 export class LlmService {
   private client: OpenAI;
   private readonly model = 'gpt-3.5-turbo';
   private readonly logger = new Logger(LlmService.name);
+  private readonly defaultCategoryId: string;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly llmRepository: LLmRepository,
+    private readonly categoriesService: CategoriesService,
   ) {
     this.client = new OpenAI({
       apiKey: this.configService.get<string>(OPENAI_API_KEY_CONFIG_KEY)!,
     });
+    this.defaultCategoryId = this.configService.get<string>(
+      DEFAULT_CATEGORY_ID_CONFIG_KEY,
+    )!;
   }
 
   async analyzeData({
@@ -34,6 +42,11 @@ export class LlmService {
     const llmRecord = await this.llmRepository.create(ocrResultId);
 
     try {
+      const categories = await this.categoriesService.getCategories();
+      const categoryNames = categories
+        .map((cat) => cat.name.toLowerCase())
+        .join('|');
+
       const prompt = `
         CONTEXT: Multi-tenant expense tracking SaaS for Philippines SMBs with OCR processing.
 
@@ -43,10 +56,13 @@ export class LlmService {
         {
           "merchantName": "string",
           "amount": number,
-          "date": "YYYY-MM-DD|null", 
-          "category": "grocery|restaurant|retail|gas|pharmacy|transportation|office_supplies|entertainment|professional_services|utilities|other",
+          "invoiceDate": "YYYY-MM-DD|null",
+          "paymentDate": "YYYY-MM-DD|null",
+          "category": "${categoryNames}",
           "items": [{"name": "string", "price": number, "quantity": number}],
-          "otherDetails": [{"key": "string", "value": "string"}]
+          "orNumber": "string|null",
+          "isVat": boolean,
+          "vat": number|null
         }
 
         RECEIPT SEPARATOR PROCESSING & COMBINATION:
@@ -57,7 +73,6 @@ export class LlmService {
         - Use the FIRST valid merchantName found (prioritize clearest/most complete)
         - Use the EARLIEST date found across all sections
         - Choose most specific category (restaurant > grocery > other)
-        - Merge otherDetails without duplicates
 
         DUPLICATE ITEM ELIMINATION:
         - Remove duplicate items with EXACT same name, price, and quantity
@@ -91,20 +106,30 @@ export class LlmService {
         - PRESERVE EXACT QUANTITIES: No rounding of decimal quantities (1.5kg → 1.5, not 2)
 
         CATEGORY RESOLUTION:
-        - Priority order: professional_services > restaurant > transportation > pharmacy > grocery > retail > utilities > office_supplies > entertainment > gas > other
-        - If sections have conflicting categories, use highest priority category
-        - If same priority level, use category from section with highest total amount
+        - Choose the most appropriate category from the available options: ${categoryNames}
+        - Match merchant type and items to these categories:
+          * Food & Dining: Restaurants, fast food, takeout
+          * Groceries: Food, toiletries, household items
+          * Transportation: Gas, public transit, ride-sharing
+          * Shopping: Clothing, electronics, general retail
+          * Bills & Utilities: Rent, electricity, phone, internet
+          * Entertainment: Movies, concerts, subscriptions, games
+          * Healthcare: Medical, pharmacy, insurance
+          * Equipment: Office supplies, equipment, software
+          * Packaging: Packaging materials, shipping, delivery
+          * Business: Business-related expenses
+          * Other: Miscellaneous expenses
+        - If sections have conflicting categories, use the most specific/appropriate category
+        - If no clear match, use "Other"
 
-        OTHER DETAILS COMBINATION (snake_case keys):
-        INCLUDE ONLY (merge from all sections, avoid duplicates):
-        - "vat_reg_number" / "tin_number" (BIR tax IDs) - use first valid found
-        - "invoice_number" / "receipt_number" / "or_number" / "si_number" - combine with semicolon if multiple
-        - "payment_method" (Cash, Card, GCash, PayMaya, etc.) - use first valid found
-        - "store_location" (City/Province only) - use most complete location
-        - "transaction_id" / "reference_number" - combine with semicolon if multiple
-        - "cashier_name" / "server_name" - use first valid found
+        VAT AND OR NUMBER EXTRACTION:
+        - "orNumber": Extract OR (Official Receipt) number from receipt - look for "OR #", "OR No.", "Receipt No.", "Invoice No."
+        - "isVat": Boolean indicating if this is a VAT receipt - look for "VAT REG TIN", "VATABLE", "VAT EXEMPT", BIR permit numbers
+        - "vat": Extract VAT amount if present - look for "VAT 12%", "VAT AMOUNT", "Value Added Tax", separate VAT line items
+        - If multiple OR numbers found across sections: combine with semicolon
+        - If any section shows VAT indicators: set isVat to true
+        - Sum all VAT amounts found across sections
 
-        EXCLUDE: Customer info, terms, promotional text, printer details, timestamps, section subtotals
 
         ERROR HANDLING FOR COMBINED RECEIPTS:
         - Empty separator sections → skip entirely
@@ -119,8 +144,7 @@ export class LlmService {
         4. Apply deduplication rules to combine items
         5. Resolve merchant, date, category using priority rules
         6. Calculate final amount from combined item totals
-        7. Merge otherDetails without duplicates
-        8. Return single JSON object
+        7. Return single JSON object
 
         EXAMPLE COMBINATION SCENARIO:
         Section 1: McDonald's breakfast items
@@ -138,10 +162,9 @@ export class LlmService {
             {"name": "Fries Large", "price": 85.00, "quantity": 1},
             {"name": "Coke", "price": 45.00, "quantity": 3}
           ],
-          "otherDetails": [
-            {"key": "payment_method", "value": "Card"},
-            {"key": "store_location", "value": "Makati City"}
-          ]
+          "orNumber": "OR-2024-001234",
+          "isVat": true,
+          "vat": 54.78
         }
 
         ${ocrText}
@@ -177,6 +200,13 @@ export class LlmService {
       const rawData = response.choices[0].message.content.trim();
       const analyzedData = this.sanitizeData(rawData);
 
+      const categoryId = this.resolveCategoryId(
+        analyzedData.category,
+        categories,
+      );
+
+      analyzedData.categoryId = categoryId;
+
       await this.llmRepository.update(llmRecord.id, {
         extractedData: analyzedData,
         processingTimeMs,
@@ -205,18 +235,40 @@ export class LlmService {
 
     const merchantName = jsonData.merchantName || 'Merchant Name';
     const amount = jsonData.amount ? Number(jsonData.amount) : 1.0;
-    const date = jsonData.date || new Date().toISOString();
+    const invoiceDate = jsonData.invoiceDate || new Date().toISOString();
+    const paymentDate =
+      jsonData.paymentDate || jsonData.invoiceDate || new Date().toISOString();
     const category = jsonData.category || 'Other';
     const items = jsonData.items || [];
-    const otherDetails = jsonData.otherDetails || [];
+    const orNumber = jsonData.orNumber || null;
+    const isVat = jsonData.isVat || false;
+    const vat = jsonData.vat ? Number(jsonData.vat) : null;
 
     return {
       merchantName,
       amount,
-      date,
+      invoiceDate,
+      paymentDate,
       category,
       items,
-      otherDetails,
+      orNumber,
+      isVat,
+      vat,
     };
+  }
+
+  private resolveCategoryId(
+    categoryName: string,
+    categories: BaseCategoryResDto[],
+  ): string {
+    const matchedCategory = categories.find(
+      (cat) => cat.name.toLowerCase() === categoryName.toLowerCase(),
+    );
+
+    if (matchedCategory) {
+      return matchedCategory.id;
+    }
+
+    return this.defaultCategoryId;
   }
 }

@@ -14,11 +14,6 @@ export interface IExpenseItem {
   price: number;
 }
 
-export interface IExpenseOtherDetails {
-  key: string;
-  value: string;
-}
-
 export interface IBaseRepositoryExpense extends IBaseRepositoryInterface {
   category: Omit<
     IBaseRepositoryCategory,
@@ -28,10 +23,13 @@ export interface IBaseRepositoryExpense extends IBaseRepositoryInterface {
   photos?: string[] | null;
   amount: number;
   currency: CurrencyCode;
-  date: Date;
+  invoice_date: Date;
+  payment_date: Date;
   description?: string | null;
   items?: IExpenseItem[] | null;
-  other_details?: IExpenseOtherDetails[] | null;
+  or_number?: string | null;
+  is_vat?: boolean | null;
+  vat?: number | null;
   source: ExpenseSource;
   status: ExpenseStatus;
   processing_status: ProcessingStatus;
