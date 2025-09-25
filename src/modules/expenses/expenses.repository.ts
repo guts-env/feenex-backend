@@ -19,6 +19,7 @@ import {
   type ProcessingStatus,
   UserRole,
 } from '@/database/types/db';
+import { startOfDay, endOfDay, parseISO } from 'date-fns';
 import { getCurrentMonth } from '@/utils/date.utils';
 
 @Injectable()
@@ -166,24 +167,16 @@ export class ExpensesRepository extends BaseRepository {
 
       if (roleName === 'manager') {
         const today = new Date();
-        const startOfDay = new Date(
-          today.getFullYear(),
-          today.getMonth(),
-          today.getDate(),
-        );
-        const endOfDay = new Date(
-          today.getFullYear(),
-          today.getMonth(),
-          today.getDate() + 1,
-        );
+        const startOfToday = startOfDay(today);
+        const endOfToday = endOfDay(today);
 
         expensesBaseQuery = expensesBaseQuery.where((eb) =>
           eb.or([
             eb('e.status', '!=', 'verified'),
             eb.and([
               eb('e.status', '=', 'verified'),
-              eb('e.verified_at', '>=', startOfDay),
-              eb('e.verified_at', '<', endOfDay),
+              eb('e.verified_at', '>=', startOfToday),
+              eb('e.verified_at', '<', endOfToday),
             ]),
           ]),
         );
@@ -493,11 +486,14 @@ export class ExpensesRepository extends BaseRepository {
 
   async delete(id: string, orgId: string) {
     try {
-      await this.db
+      const deletedExpense = await this.db
         .deleteFrom('expenses')
         .where('id', '=', id)
         .where('organization_id', '=', orgId)
-        .execute();
+        .returningAll()
+        .executeTakeFirstOrThrow();
+
+      return deletedExpense;
     } catch (error) {
       this.handleDatabaseError(error);
     }
@@ -509,25 +505,21 @@ export class ExpensesRepository extends BaseRepository {
   ): Promise<GetTotalExpensesResDto> {
     try {
       const startDate = dto.startDate
-        ? new Date(dto.startDate)
+        ? startOfDay(parseISO(dto.startDate))
         : getCurrentMonth().startDate;
       const endDate = dto.endDate
-        ? new Date(dto.endDate)
+        ? endOfDay(parseISO(dto.endDate))
         : getCurrentMonth().endDate;
 
       const result = await this.db
         .selectFrom('expenses')
         .select(({ fn }) => [
           fn.sum<number>('amount').as('total_expenses'),
-          fn.count<number>('id').as('total_count'),
           sql<number>`SUM(CASE WHEN status = 'verified' THEN amount ELSE 0 END)`.as(
             'verified_total',
           ),
           sql<number>`SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END)`.as(
             'unverified_total',
-          ),
-          sql<number>`COUNT(CASE WHEN source = 'ocr' THEN 1 END)`.as(
-            'receipts_processed',
           ),
         ])
         .where('organization_id', '=', orgId)
@@ -541,16 +533,34 @@ export class ExpensesRepository extends BaseRepository {
               total_count: 0,
               verified_total: 0,
               unverified_total: 0,
-              receipts_processed: 0,
             },
         );
 
+      const receiptsProcessedResult = await this.db
+        .selectFrom('expenses')
+        .select(({ fn }) => [
+          fn.count<number>('id').as('total_count'),
+          sql<number>`COUNT(CASE WHEN source = 'ocr' THEN 1 END)`.as(
+            'receipts_processed',
+          ),
+        ])
+        .where('organization_id', '=', orgId)
+        .where('created_at', '>=', startDate)
+        .where('created_at', '<=', endDate)
+        .executeTakeFirst()
+        .then((result) => ({
+          total_count: result?.total_count ?? 0,
+          receipts_processed: result?.receipts_processed ?? 0,
+        }));
+
       return {
         total: Number(result.total_expenses || 0),
-        count: Number(result.total_count || 0),
+        count: Number(receiptsProcessedResult.total_count || 0),
+        receiptsProcessed: Number(
+          receiptsProcessedResult.receipts_processed || 0,
+        ),
         verified: Number(result.verified_total || 0),
         unverified: Number(result.unverified_total || 0),
-        receiptsProcessed: Number(result.receipts_processed || 0),
         dateRange: { startDate, endDate },
       };
     } catch (error) {

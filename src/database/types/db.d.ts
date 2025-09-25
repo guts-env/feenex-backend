@@ -45,6 +45,8 @@ export type PermissionResource =
   | 'organizations'
   | 'users';
 
+export type PlanType = 'beta' | 'free' | 'premium';
+
 export type ProcessingStatus =
   | 'completed'
   | 'failed'
@@ -62,6 +64,17 @@ export type UserRole =
   | 'manager'
   | 'member'
   | 'personal_admin';
+
+export interface AccountPlans {
+  auto_receipt_limit: number;
+  created_at: Generated<Timestamp>;
+  id: Generated<string>;
+  manual_receipt_limit: number;
+  plan_type: PlanType;
+  subscription_limit: number;
+  team_member_limit: number;
+  updated_at: Generated<Timestamp>;
+}
 
 export interface Auth {
   created_at: Generated<Timestamp>;
@@ -177,6 +190,7 @@ export interface OcrResults {
 }
 
 export interface Organizations {
+  account_plan_id: string | null;
   created_at: Generated<Timestamp>;
   created_by: string;
   id: Generated<string>;
@@ -255,6 +269,7 @@ export interface Users {
 }
 
 export interface DB {
+  account_plans: AccountPlans;
   auth: Auth;
   categories: Categories;
   expenses: Expenses;

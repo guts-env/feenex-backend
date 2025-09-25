@@ -21,6 +21,7 @@ import { CategoriesModule } from '@/modules/categories/categories.module';
 import { InvitesModule } from '@/modules/invites/invites.module';
 import { ReportsModule } from '@/modules/reports/reports.module';
 import { SubscriptionsModule } from '@/modules/subscriptions/subscriptions.module';
+import { AccountPlansModule } from './modules/account-plans/account-plans.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { SubscriptionsModule } from '@/modules/subscriptions/subscriptions.modul
     CategoriesModule,
     InvitesModule,
     ReportsModule,
+    AccountPlansModule,
   ],
   controllers: [],
   providers: [

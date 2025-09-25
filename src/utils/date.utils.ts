@@ -1,10 +1,12 @@
+import { startOfMonth, endOfMonth } from 'date-fns';
+
 export function getCurrentMonth() {
   const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const startOfCurrentMonth = startOfMonth(now);
+  const endOfCurrentMonth = endOfMonth(now);
 
   return {
-    startDate: startOfMonth,
-    endDate: endOfMonth,
+    startDate: startOfCurrentMonth,
+    endDate: endOfCurrentMonth,
   };
 }

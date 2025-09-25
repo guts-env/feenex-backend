@@ -87,11 +87,19 @@ export class LlmService {
         - If no valid dates: use null
         - If merchantName unclear across all sections: use "Merchant Name"
 
-        AMOUNT CALCULATION:
-        - Sum all individual item calculations: Σ(price * quantity) for ALL items after deduplication
-        - DO NOT simply add stated totals from different sections (may include different taxes/fees)
-        - Final amount = combined calculation of all line items
-        - Ignore section-level totals, taxes, and fees when combining
+        AMOUNT CALCULATION (PRIORITIZE TOTAL OVER ITEMIZATION):
+        - PRIMARY: Use the stated TOTAL AMOUNT from the receipt (final total, grand total, amount due)
+        - Look for keywords: "TOTAL", "GRAND TOTAL", "AMOUNT DUE", "FINAL TOTAL", "TOTAL AMOUNT"
+        - TOTAL SELECTION PRIORITY (when multiple totals found):
+          1. "AMOUNT DUE" or "FINAL TOTAL" (most authoritative)
+          2. "GRAND TOTAL" (includes all taxes/fees)
+          3. "TOTAL" (general total)
+          4. "SUBTOTAL" (before taxes, use as last resort)
+        - If multiple totals of same type: use the LAST occurrence (final calculation)
+        - SECONDARY: If no clear total amount found, then calculate from itemization: Σ(price * quantity)
+        - DO NOT prioritize item calculations over stated totals
+        - The receipt's stated total is authoritative and should be preserved
+        - Item prices may be adjusted to reconcile with the total if needed for consistency
 
         CRITICAL PRICING RULES (Applied Per Section, Then Combined):
         - NEVER tag discounts, taxes, service charges, or delivery fees as line items
@@ -104,6 +112,7 @@ export class LlmService {
         - When ambiguous, assume line total and calculate unit price = total ÷ quantity
         - OCR ERROR CORRECTION: 0→8, 5→S, 2→Z, 1→I, 6→G common errors
         - PRESERVE EXACT QUANTITIES: No rounding of decimal quantities (1.5kg → 1.5, not 2)
+        - PRICE RECONCILIATION: If item totals don't match stated total, adjust item prices proportionally to match
 
         CATEGORY RESOLUTION:
         - Choose the most appropriate category from the available options: ${categoryNames}
@@ -129,7 +138,6 @@ export class LlmService {
         - If multiple OR numbers found across sections: combine with semicolon
         - If any section shows VAT indicators: set isVat to true
         - Sum all VAT amounts found across sections
-
 
         ERROR HANDLING FOR COMBINED RECEIPTS:
         - Empty separator sections → skip entirely
