@@ -5,12 +5,14 @@ import {
   HttpStatus,
   Post,
   Request,
+  UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ThrottleLimits, ThrottleNames } from '@/config/throttle.config';
 import { ModuleRoutes } from '@/common/constants/routes';
 import { InvitesService } from '@/modules/invites/invites.service';
 import CreateInviteDto from '@/modules/invites/dto/create-invite.dto';
+import { MemberLimitGuard } from '@/modules/auth/guards/member-limit.guard';
 import { BusinessAdminOnly } from '@/modules/auth/decorators/roles.decorator';
 import { RoleProtected } from '@/modules/auth/decorators/auth.decorator';
 import { type IAuthenticatedRequest } from '@/modules/auth/types/auth';
@@ -22,6 +24,7 @@ export class InvitesController {
   constructor(private readonly invitesService: InvitesService) {}
 
   @Post()
+  @UseGuards(MemberLimitGuard)
   @Throttle(ThrottleLimits[ThrottleNames.CREATE_INVITE])
   @HttpCode(HttpStatus.CREATED)
   createInvite(

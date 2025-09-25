@@ -483,4 +483,18 @@ export class SubscriptionsRepository extends BaseRepository {
 
     return count;
   }
+
+  async getSubscriptionCount(organizationId: string): Promise<number> {
+    try {
+      const result = await this.db
+        .selectFrom('subscriptions')
+        .select(({ fn }) => [fn.countAll().as('count')])
+        .where('organization_id', '=', organizationId)
+        .executeTakeFirst();
+
+      return result ? Number(result.count) : 0;
+    } catch (error: any) {
+      this.handleDatabaseError(error);
+    }
+  }
 }

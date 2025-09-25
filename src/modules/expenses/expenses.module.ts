@@ -9,6 +9,8 @@ import { UploadModule } from '@/modules/upload/upload.module';
 import { OcrModule } from '@/modules/ocr/ocr.module';
 import { LlmModule } from '@/modules/llm/llm.module';
 import { RedisModule } from '@/database/redis.module';
+import { AccountPlansModule } from '@/modules/account-plans/account-plans.module';
+import { OrganizationsModule } from '@/modules/organizations/organizations.module';
 import ExpenseEventsGateway from '@/modules/sockets/expense-events.gateway';
 
 @Module({
@@ -22,6 +24,8 @@ import ExpenseEventsGateway from '@/modules/sockets/expense-events.gateway';
     OcrModule,
     LlmModule,
     RedisModule,
+    AccountPlansModule,
+    OrganizationsModule,
   ],
   exports: [ExpensesService, ExpenseEventsGateway],
 })

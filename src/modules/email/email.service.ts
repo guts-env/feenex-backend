@@ -186,7 +186,6 @@ export class EmailService {
     };
 
     this.logger.log(`Attempting to send email to ${toEmail} via SendGrid API`);
-    this.logger.debug('SendGrid payload:', JSON.stringify(payload, null, 2));
 
     try {
       const response = await fetch('https://api.sendgrid.com/v3/mail/send', {

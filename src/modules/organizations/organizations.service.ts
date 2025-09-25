@@ -97,4 +97,12 @@ export class OrganizationsService {
 
     return this.orgRepository.removeMember(orgId, removedUserId);
   }
+
+  async getOrganizationWithPlan(organizationId: string) {
+    return this.orgRepository.findByIdWithPlan(organizationId);
+  }
+
+  async getMemberCount(organizationId: string): Promise<number> {
+    return this.orgRepository.getMemberCount(organizationId);
+  }
 }

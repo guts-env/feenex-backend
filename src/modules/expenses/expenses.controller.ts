@@ -12,6 +12,7 @@ import {
   Put,
   Query,
   Request,
+  UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ThrottleLimits, ThrottleNames } from '@/config/throttle.config';
@@ -21,6 +22,8 @@ import {
 } from '@/modules/auth/decorators/roles.decorator';
 import { RoleProtected } from '@/modules/auth/decorators/auth.decorator';
 import { CurrentOrganization } from '@/common/decorators/current-org.decorator';
+import { ManualExpenseLimitGuard } from '@/modules/auth/guards/manual-expense-limit.guard';
+import { AutoExpenseLimitGuard } from '@/modules/auth/guards/auto-expense-limit.guard';
 import { ExpensesService } from '@/modules/expenses/expenses.service';
 import {
   CreateManualExpenseDto,
@@ -34,7 +37,6 @@ import {
   GetTotalExpensesResDto,
 } from '@/modules/expenses/dto/get-total-expenses.dto';
 import { type IAuthenticatedRequest } from '@/modules/auth/types/auth';
-
 @AllRoles()
 @RoleProtected()
 @Controller(ModuleRoutes.Expenses.Main)
@@ -68,6 +70,7 @@ export class ExpensesController {
   }
 
   @Post()
+  @UseGuards(ManualExpenseLimitGuard)
   @HttpCode(HttpStatus.CREATED)
   createManualExpense(
     @Request() req: IAuthenticatedRequest,
@@ -81,6 +84,7 @@ export class ExpensesController {
   }
 
   @Post(ModuleRoutes.Expenses.Paths.Auto)
+  @UseGuards(AutoExpenseLimitGuard)
   @Throttle(ThrottleLimits[ThrottleNames.AUTO_EXPENSE])
   @HttpCode(HttpStatus.ACCEPTED)
   createAutoExpense(

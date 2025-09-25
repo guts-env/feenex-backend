@@ -95,4 +95,8 @@ export class SubscriptionsService {
 
     return plainToInstance(GetSubscriptionStatsResDto, subscriptionStats);
   }
+
+  async getSubscriptionCount(organizationId: string): Promise<number> {
+    return this.subscriptionsRepository.getSubscriptionCount(organizationId);
+  }
 }

@@ -227,4 +227,30 @@ export class OrganizationRepository extends BaseRepository {
       this.handleDatabaseError(error);
     }
   }
+
+  async findByIdWithPlan(organizationId: string) {
+    try {
+      return await this.db
+        .selectFrom('organizations')
+        .select(['id', 'account_plan_id'])
+        .where('id', '=', organizationId)
+        .executeTakeFirst();
+    } catch (error: any) {
+      this.handleDatabaseError(error);
+    }
+  }
+
+  async getMemberCount(organizationId: string): Promise<number> {
+    try {
+      const result = await this.db
+        .selectFrom('user_organizations')
+        .select(({ fn }) => [fn.countAll().as('count')])
+        .where('organization_id', '=', organizationId)
+        .executeTakeFirst();
+
+      return result ? Number(result.count) : 0;
+    } catch (error: any) {
+      this.handleDatabaseError(error);
+    }
+  }
 }

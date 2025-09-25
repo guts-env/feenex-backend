@@ -8,12 +8,14 @@ import {
   Delete,
   Query,
   Request,
+  UseGuards,
 } from '@nestjs/common';
-import { SubscriptionsService } from './subscriptions.service';
-import { CreateSubscriptionDto } from './dto/create-subscription.dto';
-import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
-import { GetSubscriptionsDto } from './dto/get-subscriptions.dto';
-import { GetSubscriptionStatsDto } from './dto/get-subscription-stats.dto';
+import { SubscriptionsService } from '@/modules/subscriptions/subscriptions.service';
+import { SubscriptionLimitGuard } from '@/modules/auth/guards/subscription-limit.guard';
+import { CreateSubscriptionDto } from '@/modules/subscriptions/dto/create-subscription.dto';
+import { UpdateSubscriptionDto } from '@/modules/subscriptions/dto/update-subscription.dto';
+import { GetSubscriptionsDto } from '@/modules/subscriptions/dto/get-subscriptions.dto';
+import { GetSubscriptionStatsDto } from '@/modules/subscriptions/dto/get-subscription-stats.dto';
 import { AdminsOnly } from '@/modules/auth/decorators/roles.decorator';
 import { RoleProtected } from '@/modules/auth/decorators/auth.decorator';
 import { ModuleRoutes } from '@/common/constants/routes';
@@ -26,6 +28,7 @@ export class SubscriptionsController {
   constructor(private readonly subscriptionsService: SubscriptionsService) {}
 
   @Post()
+  @UseGuards(SubscriptionLimitGuard)
   create(
     @Request() req: IAuthenticatedRequest,
     @Body() createSubscriptionDto: CreateSubscriptionDto,
