@@ -18,14 +18,14 @@ import ExpenseEventsGateway from '@/modules/sockets/expense-events.gateway';
   providers: [ExpensesService, ExpensesRepository, ExpenseEventsGateway],
   imports: [
     forwardRef(() => QueueModule),
+    forwardRef(() => AccountPlansModule),
     JwtModule,
     DatabaseModule,
     UploadModule,
     OcrModule,
     LlmModule,
     RedisModule,
-    AccountPlansModule,
-    OrganizationsModule,
+    forwardRef(() => OrganizationsModule),
   ],
   exports: [ExpensesService, ExpenseEventsGateway],
 })

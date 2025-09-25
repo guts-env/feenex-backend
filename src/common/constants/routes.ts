@@ -13,6 +13,12 @@ export const ModuleRoutes = {
       LogoutAllDevices: 'logout-all',
     },
   },
+  AccountPlans: {
+    Main: 'account-plans',
+    Paths: {
+      Organization: 'organization',
+    },
+  },
   Categories: {
     Main: 'categories',
   },
