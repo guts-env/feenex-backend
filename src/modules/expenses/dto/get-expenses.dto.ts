@@ -44,6 +44,34 @@ export default class GetExpensesDto extends PaginatedDto<Expenses> {
   endDate?: Date;
 
   @IsOptional()
+  @Transform(({ value }: { value: string }) => {
+    return value ? new Date(value) : value;
+  })
+  @IsDate()
+  paymentStartDate?: Date;
+
+  @IsOptional()
+  @Transform(({ value }: { value: string }) =>
+    value ? new Date(value) : value,
+  )
+  @IsDate()
+  paymentEndDate?: Date;
+
+  @IsOptional()
+  @Transform(({ value }: { value: string }) => {
+    return value ? new Date(value) : value;
+  })
+  @IsDate()
+  invoiceStartDate?: Date;
+
+  @IsOptional()
+  @Transform(({ value }: { value: string }) =>
+    value ? new Date(value) : value,
+  )
+  @IsDate()
+  invoiceEndDate?: Date;
+
+  @IsOptional()
   @Transform(({ value }: { value: string }) =>
     value ? parseFloat(value).toFixed(2) : value,
   )

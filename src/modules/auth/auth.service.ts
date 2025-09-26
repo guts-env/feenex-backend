@@ -210,7 +210,7 @@ export class AuthService {
 
   private async checkAndMigrateBetaPlan(organizationId: string): Promise<void> {
     try {
-      const cutoffDate = new Date('2025-09-16');
+      const cutoffDate = new Date('2025-10-27');
       const currentDate = new Date();
 
       if (!isAfter(currentDate, cutoffDate)) {

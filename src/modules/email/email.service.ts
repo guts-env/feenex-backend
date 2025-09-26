@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { join } from 'path';
@@ -154,6 +154,78 @@ export class EmailService {
     }
   }
 
+  async sendSupportEmail(
+    name: string,
+    email: string,
+    subject: string,
+    message: string,
+    customSubject: string,
+  ): Promise<void> {
+    if (!this.enableEmailService) {
+      return;
+    }
+
+    if (!name || !email || !subject || !message) {
+      this.logger.warn('Missing required parameters for support email: ', {
+        name,
+        email,
+        subject,
+        message: message ? 'present' : 'missing',
+      });
+      throw new BadRequestException({
+        message: 'Missing required parameters for support email',
+      });
+    }
+
+    const finalSubject = subject === 'other' ? customSubject : subject;
+    const transformedSubject = finalSubject
+      .split('_')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+
+    const supportEmail = 'sdssanol@gmail.com';
+    const emailSubject = `Support Request: ${transformedSubject}`;
+
+    const htmlContent = `
+      <h2>Support Request from ${name}</h2>
+      <p><strong>From:</strong> ${email}</p>
+      <p><strong>Subject:</strong> ${transformedSubject}</p>
+      <p><strong>Message:</strong></p>
+      <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px;">
+        ${message.replace(/\n/g, '<br>')}
+      </div>
+    `;
+
+    const plainTextContent = `
+      Support Request from ${name}
+      From: ${email}
+      Subject: ${subject}
+
+      Message:
+      ${message}
+    `;
+
+    console.log({
+      emailSubject,
+    });
+
+    if (this.isDevelopment) {
+      await this.sendEmailWithSendGridAPI(
+        supportEmail,
+        emailSubject,
+        plainTextContent,
+        htmlContent,
+      );
+    } else {
+      await this.sendEmailWithSES(
+        supportEmail,
+        emailSubject,
+        plainTextContent,
+        htmlContent,
+      );
+    }
+  }
+
   private async sendEmailWithSendGridAPI(
     toEmail: string,
     subject: string,
@@ -185,8 +257,6 @@ export class EmailService {
       ],
     };
 
-    this.logger.log(`Attempting to send email to ${toEmail} via SendGrid API`);
-
     try {
       const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
         method: 'POST',
@@ -206,10 +276,6 @@ export class EmailService {
           `SendGrid API error: ${response.status} - ${errorText}`,
         );
       }
-
-      this.logger.log(
-        `✅ Email successfully sent to ${toEmail} via SendGrid API. Status: ${response.status}`,
-      );
     } catch (error) {
       this.logger.error(
         `❌ Failed to send email to ${toEmail} via SendGrid API:`,

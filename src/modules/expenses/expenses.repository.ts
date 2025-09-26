@@ -137,6 +137,10 @@ export class ExpensesRepository extends BaseRepository {
       // verifiedByUsers,
       startDate,
       endDate,
+      paymentStartDate,
+      paymentEndDate,
+      invoiceStartDate,
+      invoiceEndDate,
       minAmount,
       maxAmount,
       statuses,
@@ -208,7 +212,7 @@ export class ExpensesRepository extends BaseRepository {
 
       if (startDate) {
         expensesBaseQuery = expensesBaseQuery.where(
-          'e.payment_date',
+          'e.created_at',
           '>=',
           startDate,
         );
@@ -216,9 +220,41 @@ export class ExpensesRepository extends BaseRepository {
 
       if (endDate) {
         expensesBaseQuery = expensesBaseQuery.where(
-          'e.payment_date',
+          'e.created_at',
           '<=',
           endDate,
+        );
+      }
+
+      if (paymentStartDate) {
+        expensesBaseQuery = expensesBaseQuery.where(
+          'e.payment_date',
+          '>=',
+          paymentStartDate,
+        );
+      }
+
+      if (paymentEndDate) {
+        expensesBaseQuery = expensesBaseQuery.where(
+          'e.payment_date',
+          '<=',
+          paymentEndDate,
+        );
+      }
+
+      if (invoiceStartDate) {
+        expensesBaseQuery = expensesBaseQuery.where(
+          'e.invoice_date',
+          '>=',
+          invoiceStartDate,
+        );
+      }
+
+      if (invoiceEndDate) {
+        expensesBaseQuery = expensesBaseQuery.where(
+          'e.invoice_date',
+          '<=',
+          invoiceEndDate,
         );
       }
 

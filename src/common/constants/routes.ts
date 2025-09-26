@@ -22,6 +22,12 @@ export const ModuleRoutes = {
   Categories: {
     Main: 'categories',
   },
+  Email: {
+    Main: 'email',
+    Paths: {
+      Support: 'support',
+    },
+  },
   Expenses: {
     Main: 'expenses',
     Paths: {
