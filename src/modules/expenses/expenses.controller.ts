@@ -17,8 +17,8 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { ThrottleLimits, ThrottleNames } from '@/config/throttle.config';
 import {
+  AdminsOnly,
   AllRoles,
-  BusinessAdminOnly,
 } from '@/modules/auth/decorators/roles.decorator';
 import { RoleProtected } from '@/modules/auth/decorators/auth.decorator';
 import { CurrentOrganization } from '@/common/decorators/current-org.decorator';
@@ -56,7 +56,7 @@ export class ExpensesController {
     );
   }
 
-  @BusinessAdminOnly()
+  @AdminsOnly()
   @Get(ModuleRoutes.Expenses.Paths.Total)
   @HttpCode(HttpStatus.OK)
   getTotalExpenses(

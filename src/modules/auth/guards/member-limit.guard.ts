@@ -38,22 +38,31 @@ export class MemberLimitGuard implements CanActivate {
         organization.account_plan_id,
       );
 
-      /* -1 means unlimited */
-      if (accountPlan.team_member_limit === -1) {
+      // Personal organizations can only have 1 member regardless of plan
+      const effectiveMemberLimit =
+        organization.type === 'personal' ? 1 : accountPlan.team_member_limit;
+
+      /* -1 means unlimited (but not for personal organizations) */
+      if (effectiveMemberLimit === -1 && organization.type !== 'personal') {
         return true;
       }
 
       const currentMemberCount =
         await this.organizationsService.getMemberCount(organizationId);
 
-      if (currentMemberCount >= accountPlan.team_member_limit) {
+      if (currentMemberCount >= effectiveMemberLimit) {
         this.logger.warn(
           `Member limit exceeded for organization ${organizationId}. ` +
-            `Current: ${currentMemberCount}, Limit: ${accountPlan.team_member_limit}`,
+            `Current: ${currentMemberCount}, Limit: ${effectiveMemberLimit}`,
         );
 
+        const limitMessage =
+          organization.type === 'personal'
+            ? 'Personal organizations can only have 1 member'
+            : `Member limit of ${effectiveMemberLimit} reached for your ${accountPlan.plan_type} plan`;
+
         throw new ForbiddenException({
-          message: `Member limit of ${accountPlan.team_member_limit} reached for your ${accountPlan.plan_type} plan`,
+          message: limitMessage,
         });
       }
 

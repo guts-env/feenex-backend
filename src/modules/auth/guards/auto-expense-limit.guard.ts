@@ -48,7 +48,7 @@ export class AutoExpenseLimitGuard implements CanActivate {
       const currentAutoExpenseCount =
         await this.expensesService.getAutoExpensesCount(organizationId);
 
-      if (currentAutoExpenseCount >= accountPlan.auto_receipt_limit - 198) {
+      if (currentAutoExpenseCount >= accountPlan.auto_receipt_limit) {
         this.logger.warn(
           `Auto expense limit exceeded for organization ${organizationId}. ` +
             `Current: ${currentAutoExpenseCount}, Limit: ${accountPlan.auto_receipt_limit}`,

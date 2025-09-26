@@ -4,7 +4,10 @@ import { AccountPlansService } from '@/modules/account-plans/account-plans.servi
 import { OrganizationsService } from '@/modules/organizations/organizations.service';
 import { ExpensesService } from '@/modules/expenses/expenses.service';
 import { SubscriptionsService } from '@/modules/subscriptions/subscriptions.service';
-import { BusinessAdminOnly } from '@/modules/auth/decorators/roles.decorator';
+import {
+  AdminsOnly,
+  BusinessAdminOnly,
+} from '@/modules/auth/decorators/roles.decorator';
 import { RoleProtected } from '@/modules/auth/decorators/auth.decorator';
 import { ModuleRoutes } from '@/common/constants/routes';
 import { type IAuthenticatedRequest } from '@/modules/auth/types/auth';
@@ -19,14 +22,14 @@ export class AccountPlansController {
     private readonly subscriptionsService: SubscriptionsService,
   ) {}
 
-  @Get()
-  @BusinessAdminOnly()
-  async getAllPlans() {
-    return this.accountPlansService.findAll();
-  }
+  // @Get()
+  // @BusinessAdminOnly()
+  // async getAllPlans() {
+  //   return this.accountPlansService.findAll();
+  // }
 
   @Get(ModuleRoutes.AccountPlans.Paths.Organization)
-  @BusinessAdminOnly()
+  @AdminsOnly()
   async getOrganizationLimits(
     @Req() req: IAuthenticatedRequest,
     @Res() res: Response,
@@ -56,12 +59,16 @@ export class AccountPlansController {
       this.expensesService.getAutoExpensesCount(req.user.organization.id),
     ]);
 
+    // Personal organizations are always limited to 1 member regardless of plan
+    const effectiveMemberLimit =
+      organization.type === 'personal' ? 1 : accountPlan.team_member_limit;
+
     const result = {
       plan: {
         id: accountPlan.id,
         plan_type: accountPlan.plan_type,
         limits: {
-          team_member_limit: accountPlan.team_member_limit,
+          team_member_limit: effectiveMemberLimit,
           subscription_limit: accountPlan.subscription_limit,
           manual_receipt_limit: accountPlan.manual_receipt_limit,
           auto_receipt_limit: accountPlan.auto_receipt_limit,
@@ -70,11 +77,11 @@ export class AccountPlansController {
       usage: {
         members: {
           current: currentMemberCount,
-          limit: accountPlan.team_member_limit,
+          limit: effectiveMemberLimit,
           remaining:
-            accountPlan.team_member_limit === -1
+            effectiveMemberLimit === -1
               ? -1
-              : Math.max(0, accountPlan.team_member_limit - currentMemberCount),
+              : Math.max(0, effectiveMemberLimit - currentMemberCount),
         },
         subscriptions: {
           current: currentSubscriptionCount,

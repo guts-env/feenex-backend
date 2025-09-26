@@ -15,6 +15,7 @@ import { OrganizationsModule } from '@/modules/organizations/organizations.modul
 import { InvitesModule } from '@/modules/invites/invites.module';
 import { UploadModule } from '@/modules/upload/upload.module';
 import { EmailModule } from '@/modules/email/email.module';
+import { AccountPlansModule } from '@/modules/account-plans/account-plans.module';
 import {
   JWT_EXPIRATION_TIME_CONFIG_KEY,
   JWT_SECRET_CONFIG_KEY,
@@ -37,6 +38,7 @@ import { RedisModule } from '@/database/redis.module';
     EmailModule,
     InvitesModule,
     OrganizationsModule,
+    AccountPlansModule,
     UploadModule,
     UsersModule,
     PassportModule,

@@ -232,7 +232,7 @@ export class OrganizationRepository extends BaseRepository {
     try {
       return await this.db
         .selectFrom('organizations')
-        .select(['id', 'account_plan_id'])
+        .select(['id', 'account_plan_id', 'type'])
         .where('id', '=', organizationId)
         .executeTakeFirst();
     } catch (error: any) {

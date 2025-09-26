@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
   BadRequestException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -28,10 +29,12 @@ import {
   type IValidateUserInput,
 } from '@/modules/auth/types/auth';
 import { type IUser } from '@/modules/users/types/users';
+import { isAfter } from 'date-fns';
 
 @Injectable()
 export class AuthService {
   private readonly resetPasswordRedirectUrl: string;
+  private readonly logger = new Logger(AuthService.name);
 
   constructor(
     private readonly inviteService: InvitesService,
@@ -181,6 +184,9 @@ export class AuthService {
       profile_photo?: string | null;
     },
   ): Promise<UserLoginResDto> {
+    // Check and migrate beta plan to free if after October 27, 2025
+    await this.checkAndMigrateBetaPlan(user.organization.id);
+
     const accessToken = this.jwtService.sign(user);
     const refreshToken = await this.refreshTokenService.generateRefreshToken(
       user.sub,
@@ -200,6 +206,31 @@ export class AuthService {
         organization: user.organization,
       },
     });
+  }
+
+  private async checkAndMigrateBetaPlan(organizationId: string): Promise<void> {
+    try {
+      const cutoffDate = new Date('2025-09-16');
+      const currentDate = new Date();
+
+      if (!isAfter(currentDate, cutoffDate)) {
+        return;
+      }
+
+      const organization =
+        await this.organizationService.getOrganizationWithPlan(organizationId);
+
+      if (!organization?.account_plan_id) {
+        return;
+      }
+
+      await this.authRepository.migrateBetaPlanToFree(organizationId);
+    } catch (error) {
+      this.logger.error(
+        `Failed to migrate beta plan for organization ${organizationId}:`,
+        error,
+      );
+    }
   }
 
   async refreshAccessToken(

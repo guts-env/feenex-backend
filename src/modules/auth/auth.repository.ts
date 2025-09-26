@@ -7,6 +7,7 @@ import {
 } from '@/modules/auth/types/auth';
 import { sql } from 'kysely';
 import { IUserWithOrgAndRole } from '../users/types/users';
+import { isBefore } from 'date-fns';
 
 @Injectable()
 export class AuthRepository extends BaseRepository {
@@ -42,6 +43,18 @@ export class AuthRepository extends BaseRepository {
         .values({ user_id: userId, password: hashedPassword })
         .execute();
 
+      // Determine plan type based on date
+      // Before October 27, 2025 = beta plan, after = free plan
+      const cutoffDate = new Date('2025-10-27');
+      const currentDate = new Date();
+      const planType = isBefore(currentDate, cutoffDate) ? 'beta' : 'free';
+
+      const accountPlan = await trx
+        .selectFrom('account_plans')
+        .select('id')
+        .where('plan_type', '=', planType)
+        .executeTakeFirstOrThrow();
+
       const newOrg = await trx
         .insertInto('organizations')
         .values({
@@ -49,6 +62,7 @@ export class AuthRepository extends BaseRepository {
           type: orgType,
           created_by: userId,
           updated_by: userId,
+          account_plan_id: accountPlan.id,
         })
         .returning('id')
         .executeTakeFirstOrThrow();
@@ -172,6 +186,35 @@ export class AuthRepository extends BaseRepository {
       })
       .where('id', '=', id)
       .execute();
+  }
+
+  async migrateBetaPlanToFree(organizationId: string): Promise<void> {
+    try {
+      const org = await this.db
+        .selectFrom('organizations as o')
+        .leftJoin('account_plans as ap', 'o.account_plan_id', 'ap.id')
+        .select(['o.id', 'ap.plan_type'])
+        .where('o.id', '=', organizationId)
+        .executeTakeFirst();
+
+      if (org?.plan_type !== 'beta') {
+        return;
+      }
+
+      const freePlan = await this.db
+        .selectFrom('account_plans')
+        .select('id')
+        .where('plan_type', '=', 'free')
+        .executeTakeFirstOrThrow();
+
+      await this.db
+        .updateTable('organizations')
+        .set({ account_plan_id: freePlan.id })
+        .where('id', '=', organizationId)
+        .execute();
+    } catch (error: any) {
+      this.handleDatabaseError(error);
+    }
   }
 
   async findUserWithAuthByEmail(email: string) {
