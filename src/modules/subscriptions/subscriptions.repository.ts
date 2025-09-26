@@ -151,6 +151,10 @@ export class SubscriptionsRepository extends BaseRepository {
       statuses,
       frequency,
       isVat,
+      startDate,
+      endDate,
+      billingStartDate,
+      billingEndDate,
       search,
       offset,
       limit,
@@ -202,6 +206,38 @@ export class SubscriptionsRepository extends BaseRepository {
             eb('s.merchant_name', 'ilike', `%${search}%`),
             eb('s.description', 'ilike', `%${search}%`),
           ]),
+        );
+      }
+
+      if (startDate) {
+        subscriptionsBaseQuery = subscriptionsBaseQuery.where(
+          's.start_date',
+          '>=',
+          startDate,
+        );
+      }
+
+      if (endDate) {
+        subscriptionsBaseQuery = subscriptionsBaseQuery.where(
+          's.end_date',
+          '<=',
+          endDate,
+        );
+      }
+
+      if (billingStartDate) {
+        subscriptionsBaseQuery = subscriptionsBaseQuery.where(
+          's.billing_date',
+          '>=',
+          billingStartDate,
+        );
+      }
+
+      if (billingEndDate) {
+        subscriptionsBaseQuery = subscriptionsBaseQuery.where(
+          's.billing_date',
+          '<=',
+          billingEndDate,
         );
       }
 

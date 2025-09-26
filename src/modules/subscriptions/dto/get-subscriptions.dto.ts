@@ -1,6 +1,7 @@
 import {
   ArrayNotEmpty,
   IsBoolean,
+  IsDate,
   IsIn,
   IsOptional,
   IsUUID,
@@ -28,4 +29,32 @@ export class GetSubscriptionsDto extends PaginatedDto<Subscriptions> {
   @Transform(({ value }) => value === 'true')
   @IsBoolean()
   isVat?: boolean;
+
+  @IsOptional()
+  @Transform(({ value }: { value: string }) => {
+    return value ? new Date(value) : value;
+  })
+  @IsDate()
+  startDate?: Date;
+
+  @IsOptional()
+  @Transform(({ value }: { value: string }) =>
+    value ? new Date(value) : value,
+  )
+  @IsDate()
+  endDate?: Date;
+
+  @IsOptional()
+  @Transform(({ value }: { value: string }) => {
+    return value ? new Date(value) : value;
+  })
+  @IsDate()
+  billingStartDate?: Date;
+
+  @IsOptional()
+  @Transform(({ value }: { value: string }) =>
+    value ? new Date(value) : value,
+  )
+  @IsDate()
+  billingEndDate?: Date;
 }
