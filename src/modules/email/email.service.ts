@@ -205,10 +205,6 @@ export class EmailService {
       ${message}
     `;
 
-    console.log({
-      emailSubject,
-    });
-
     if (this.isDevelopment) {
       await this.sendEmailWithSendGridAPI(
         supportEmail,
