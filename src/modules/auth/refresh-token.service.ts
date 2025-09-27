@@ -77,6 +77,7 @@ export class RefreshTokenService {
     const storedData = await this.redisClient.get(redisKey);
 
     if (!storedData) {
+      console.log('Refresh token expired or invalid', redisKey);
       throw new UnauthorizedException({
         message: 'Refresh token expired or invalid',
       });

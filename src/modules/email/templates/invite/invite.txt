@@ -1,12 +1,12 @@
-# FeeNex - You're Invited!
+# Feenex - You're Invited!
 
 Hello!
 
-You've been invited to join **{{orgName}}** on FeeNex.
+You've been invited to join **{{orgName}}** on Feenex.
 
-FeeNex helps teams track expenses efficiently and gain valuable financial insights. Start managing your organization's finances better today.
+Feenex helps teams track expenses efficiently and gain valuable financial insights. Start managing your organization's finances better today.
 
 **[Accept your invitation]({{inviteLink}})** and create your account to get started.
 
 Best regards,  
-**The FeeNex Team**
+**The Feenex Team**

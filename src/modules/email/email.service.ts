@@ -70,7 +70,7 @@ export class EmailService {
 
     const htmlTemplate = await this.getTemplate('welcome', 'html');
     const txtTemplate = await this.getTemplate('welcome', 'txt');
-    const subject = 'FeeNex - Welcome to FeeNex!';
+    const subject = 'Feenex - Welcome to Feenex!';
 
     if (this.isDevelopment) {
       await this.sendEmailWithSendGridAPI(
@@ -105,7 +105,7 @@ export class EmailService {
 
     const htmlTemplate = await this.getTemplate('invite', 'html');
     const txtTemplate = await this.getTemplate('invite', 'txt');
-    const subject = `FeeNex - Invitation to join ${orgName}`;
+    const subject = `Feenex - Invitation to join ${orgName}`;
 
     const html = this.replaceVariables(htmlTemplate, { orgName, inviteLink });
     const plainText = this.replaceVariables(txtTemplate, {
@@ -142,7 +142,7 @@ export class EmailService {
 
     const htmlTemplate = await this.getTemplate('reset-password', 'html');
     const txtTemplate = await this.getTemplate('reset-password', 'txt');
-    const subject = 'FeeNex - Reset Your Password';
+    const subject = 'Feenex - Reset Your Password';
 
     const html = this.replaceVariables(htmlTemplate, { resetLink });
     const plainText = this.replaceVariables(txtTemplate, { resetLink });

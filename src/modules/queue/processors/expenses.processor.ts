@@ -9,6 +9,7 @@ import { ExpensesService } from '@/modules/expenses/expenses.service';
 import ExpensesEventsGateway from '@/modules/sockets/expense-events.gateway';
 import { CreateOcrExpenseDto } from '@/modules/expenses/dto/create-expense.dto';
 import { type IExtractedData } from '@/modules/llm/types/llm';
+import { IUserPassport } from '@/modules/auth/types/auth';
 
 @Injectable()
 @Processor(EXPENSES_QUEUE, {
@@ -31,8 +32,7 @@ export class ExpensesConsumer extends WorkerHost {
     job: Job<
       CreateOcrExpenseDto & {
         expenseId: string;
-        orgId: string;
-        userId: string;
+        user: IUserPassport;
         ocrResultId?: string;
         ocrText?: string;
         llmResultId?: string;
@@ -40,12 +40,12 @@ export class ExpensesConsumer extends WorkerHost {
       }
     >,
   ): Promise<any> {
-    const { expenseId, orgId, userId, photos } = job.data;
+    const { expenseId, user, photos } = job.data;
 
     const getPresignedUrls =
       await this.uploadService.createMultiplePresignedDownloadUrls(
         photos,
-        orgId,
+        user.organization.id,
       );
 
     if (!job.data.ocrResultId || !job.data.ocrText) {
@@ -75,8 +75,7 @@ export class ExpensesConsumer extends WorkerHost {
 
     const createdAutoExpense = await this.expensesService.updateExpense(
       expenseId,
-      userId,
-      orgId,
+      user,
       {
         ...job.data.analyzedData,
         orNumber: job.data.analyzedData?.orNumber || undefined,
@@ -89,12 +88,16 @@ export class ExpensesConsumer extends WorkerHost {
       true,
     );
 
-    this.expensesEventsGateway.notifyProcessedExpense(orgId, userId, {
-      id: createdAutoExpense.id,
-      organization_id: orgId,
-      merchant_name: createdAutoExpense.merchantName,
-      amount: createdAutoExpense.amount,
-    });
+    this.expensesEventsGateway.notifyProcessedExpense(
+      user.organization.id,
+      user.sub,
+      {
+        id: createdAutoExpense.id,
+        organization_id: user.organization.id,
+        merchant_name: createdAutoExpense.merchantName,
+        amount: createdAutoExpense.amount,
+      },
+    );
   }
 
   @OnWorkerEvent('active')
@@ -116,12 +119,11 @@ export class ExpensesConsumer extends WorkerHost {
     job: Job<
       CreateOcrExpenseDto & {
         expenseId: string;
-        orgId: string;
-        userId: string;
+        user: IUserPassport;
       }
     >,
   ) {
-    const { expenseId, orgId, userId } = job.data;
+    const { expenseId, user } = job.data;
 
     if (job.attemptsMade >= (job.opts.attempts || 2)) {
       this.logger.error(
@@ -132,8 +134,7 @@ export class ExpensesConsumer extends WorkerHost {
 
       await this.expensesService.updateExpense(
         expenseId,
-        userId,
-        orgId,
+        user,
         {
           status: 'rejected',
           processingStatus: 'failed',
@@ -142,12 +143,16 @@ export class ExpensesConsumer extends WorkerHost {
         true,
       );
 
-      this.expensesEventsGateway.notifyProcessedExpense(orgId, userId, {
-        id: expenseId,
-        organization_id: orgId,
-        merchant_name: failedMerchantName,
-        amount: 0,
-      });
+      this.expensesEventsGateway.notifyProcessedExpense(
+        user.organization.id,
+        user.sub,
+        {
+          id: expenseId,
+          organization_id: user.organization.id,
+          merchant_name: failedMerchantName,
+          amount: 0,
+        },
+      );
     } else {
       this.logger.error(
         `Retrying failed job ${job.id}: Attempt ${job.attemptsMade} of ${job.opts.attempts || 3}`,

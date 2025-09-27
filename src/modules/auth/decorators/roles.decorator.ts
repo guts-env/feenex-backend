@@ -8,4 +8,5 @@ export const AllRoles = () =>
   Roles('personal_admin', 'business_admin', 'manager', 'member');
 export const AdminsOnly = () => Roles('personal_admin', 'business_admin');
 export const BusinessAdminOnly = () => Roles('business_admin');
+export const ManagersOnly = () => Roles('business_admin', 'manager');
 export const PersonalOnly = () => Roles('personal_admin');

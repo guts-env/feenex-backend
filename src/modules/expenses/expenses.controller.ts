@@ -19,6 +19,7 @@ import { ThrottleLimits, ThrottleNames } from '@/config/throttle.config';
 import {
   AdminsOnly,
   AllRoles,
+  ManagersOnly,
 } from '@/modules/auth/decorators/roles.decorator';
 import { RoleProtected } from '@/modules/auth/decorators/auth.decorator';
 import { CurrentOrganization } from '@/common/decorators/current-org.decorator';
@@ -91,11 +92,7 @@ export class ExpensesController {
     @Request() req: IAuthenticatedRequest,
     @Body() createExpenseDto: CreateOcrExpenseDto,
   ) {
-    return this.expensesService.createAutoExpense(
-      req.user.organization.id,
-      req.user.sub,
-      createExpenseDto,
-    );
+    return this.expensesService.createAutoExpense(req.user, createExpenseDto);
   }
 
   @Put(':id')
@@ -105,12 +102,7 @@ export class ExpensesController {
     @Request() req: IAuthenticatedRequest,
     @Body() updateExpenseDto: UpdateExpenseDto,
   ) {
-    return this.expensesService.updateExpense(
-      id,
-      req.user.sub,
-      req.user.organization.id,
-      updateExpenseDto,
-    );
+    return this.expensesService.updateExpense(id, req.user, updateExpenseDto);
   }
 
   @Get(':id')
@@ -123,16 +115,13 @@ export class ExpensesController {
   }
 
   @Patch(':id/' + ModuleRoutes.Expenses.Paths.Verify)
+  @ManagersOnly()
   @HttpCode(HttpStatus.OK)
   verifyExpense(
     @Param('id') id: string,
     @Request() req: IAuthenticatedRequest,
   ) {
-    return this.expensesService.verifyExpense(
-      id,
-      req.user.sub,
-      req.user.organization.id,
-    );
+    return this.expensesService.verifyExpense(id, req.user);
   }
 
   @Delete(':id')
@@ -141,10 +130,6 @@ export class ExpensesController {
     @Param('id') id: string,
     @Request() req: IAuthenticatedRequest,
   ) {
-    return this.expensesService.deleteExpense(
-      id,
-      req.user.sub,
-      req.user.organization.id,
-    );
+    return this.expensesService.deleteExpense(id, req.user);
   }
 }

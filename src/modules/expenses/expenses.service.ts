@@ -32,6 +32,7 @@ import { REDIS_EXPENSE_METRICS_KEY } from '@/common/constants/redis';
 import { getCurrentMonthKey } from '@/utils/redis.utils';
 import { ExpenseMetricEnum } from '@/common/constants/enums';
 import { IBaseRepositoryExpense } from './types/expenses';
+import { IUserPassport } from '../auth/types/auth';
 
 @Injectable()
 export class ExpensesService {
@@ -140,13 +141,9 @@ export class ExpensesService {
     return expense;
   }
 
-  async createAutoExpense(
-    orgId: string,
-    userId: string,
-    dto: CreateOcrExpenseDto,
-  ) {
+  async createAutoExpense(user: IUserPassport, dto: CreateOcrExpenseDto) {
     try {
-      const expense = await this.createExpense(orgId, userId, {
+      const expense = await this.createExpense(user.organization.id, user.sub, {
         categoryId: this.defaultCategoryId,
         source: 'ocr',
         merchantName: 'Processing...',
@@ -156,9 +153,13 @@ export class ExpensesService {
         ...dto,
       });
 
-      this.expensesEventsGateway.notifyCreatedExpense(orgId, userId, expense);
+      this.expensesEventsGateway.notifyCreatedExpense(
+        user.organization.id,
+        user.sub,
+        expense,
+      );
 
-      await this.queueService.addExpenseJob(expense.id, orgId, userId, dto);
+      await this.queueService.addExpenseJob(expense.id, user, dto);
     } catch (error) {
       this.logger.error(error);
       throw new InternalServerErrorException(
@@ -191,12 +192,20 @@ export class ExpensesService {
 
   async updateExpense(
     id: string,
-    userId: string,
-    orgId: string,
+    user: IUserPassport,
     payload: UpdateExpenseDto & { processingStatus?: ProcessingStatus },
     fromJob?: boolean,
   ): Promise<GetExpenseResDto> {
-    const expense = await this.expensesRepository.findById(id, orgId);
+    if (payload.status === 'verified' && user.role.name === 'member') {
+      throw new ForbiddenException({
+        message: 'Organization members cannot verify expenses.',
+      });
+    }
+
+    const expense = await this.expensesRepository.findById(
+      id,
+      user.organization.id,
+    );
 
     if (!expense) {
       throw new NotFoundException({
@@ -212,8 +221,8 @@ export class ExpensesService {
 
     const updatedExpense = await this.expensesRepository.update(
       id,
-      userId,
-      orgId,
+      user.sub,
+      user.organization.id,
       payload,
     );
 
@@ -221,7 +230,7 @@ export class ExpensesService {
       await this.handleExpenseUpdateCaching(
         expense,
         updatedExpense,
-        orgId,
+        user.organization.id,
         fromJob,
       );
     } catch (error) {
@@ -234,23 +243,23 @@ export class ExpensesService {
     return plainToInstance(GetExpenseResDto, updatedExpense);
   }
 
-  async verifyExpense(id: string, userId: string, orgId: string) {
+  async verifyExpense(id: string, user: IUserPassport) {
     const verifiedExpense = await this.expensesRepository.verify(
       id,
-      userId,
-      orgId,
+      user.sub,
+      user.organization.id,
     );
 
     try {
       const paymentDate = new Date(verifiedExpense.payment_date);
       await Promise.all([
         this.updateVerifiedExpenseAmount(
-          orgId,
+          user.organization.id,
           Number(verifiedExpense.amount),
           paymentDate,
         ),
         this.updateUnverifiedExpenseAmount(
-          orgId,
+          user.organization.id,
           -Number(verifiedExpense.amount),
           paymentDate,
         ),
@@ -262,18 +271,42 @@ export class ExpensesService {
       );
     }
 
-    this.expensesEventsGateway.notifyVerifiedExpense(orgId, userId, {
-      id: verifiedExpense.id,
-      organization_id: orgId,
-      merchant_name: verifiedExpense.merchant_name,
-      amount: Number(verifiedExpense.amount),
-    });
+    this.expensesEventsGateway.notifyVerifiedExpense(
+      user.organization.id,
+      user.sub,
+      {
+        id: verifiedExpense.id,
+        organization_id: user.organization.id,
+        merchant_name: verifiedExpense.merchant_name,
+        amount: Number(verifiedExpense.amount),
+      },
+    );
 
     return plainToInstance(GetExpenseResDto, verifiedExpense);
   }
 
-  async deleteExpense(id: string, userId: string, orgId: string) {
-    const deletedExpense = await this.expensesRepository.delete(id, orgId);
+  async deleteExpense(id: string, user: IUserPassport) {
+    const expense = await this.expensesRepository.findById(
+      id,
+      user.organization.id,
+    );
+
+    if (!expense) {
+      throw new NotFoundException({
+        message: 'Expense does not exist.',
+      });
+    }
+
+    if (expense.status === 'verified' && user.role.name === 'member') {
+      throw new ForbiddenException({
+        message: 'Organization members cannot delete verified expenses.',
+      });
+    }
+
+    const deletedExpense = await this.expensesRepository.delete(
+      id,
+      user.organization.id,
+    );
 
     if (this.isValidExpenseStatus(deletedExpense.status)) {
       try {
@@ -282,7 +315,7 @@ export class ExpensesService {
 
         const cacheUpdates: Promise<any>[] = [
           this.updateTotalExpenseAmount(
-            orgId,
+            user.organization.id,
             -Number(deletedExpense.amount),
             paymentDate,
           ),
@@ -293,7 +326,7 @@ export class ExpensesService {
           cacheUpdates.push(
             this.redisClient.decr(
               this.getExpenseMetricKey(
-                orgId,
+                user.organization.id,
                 ExpenseMetricEnum.MANUAL_COUNT,
                 countMonthKey,
               ),
@@ -304,7 +337,7 @@ export class ExpensesService {
           cacheUpdates.push(
             this.redisClient.decr(
               this.getExpenseMetricKey(
-                orgId,
+                user.organization.id,
                 ExpenseMetricEnum.AUTO_COUNT,
                 countMonthKey,
               ),
@@ -315,7 +348,7 @@ export class ExpensesService {
         if (deletedExpense.status === 'verified') {
           cacheUpdates.push(
             this.updateVerifiedExpenseAmount(
-              orgId,
+              user.organization.id,
               -Number(deletedExpense.amount),
               paymentDate,
             ),
@@ -323,7 +356,7 @@ export class ExpensesService {
         } else {
           cacheUpdates.push(
             this.updateUnverifiedExpenseAmount(
-              orgId,
+              user.organization.id,
               -Number(deletedExpense.amount),
               paymentDate,
             ),
@@ -339,10 +372,14 @@ export class ExpensesService {
       }
     }
 
-    this.expensesEventsGateway.notifyDeletedExpense(orgId, userId, {
-      id,
-      organization_id: orgId,
-    });
+    this.expensesEventsGateway.notifyDeletedExpense(
+      user.organization.id,
+      user.sub,
+      {
+        id,
+        organization_id: user.organization.id,
+      },
+    );
 
     return plainToInstance(GetExpenseResDto, deletedExpense);
   }
