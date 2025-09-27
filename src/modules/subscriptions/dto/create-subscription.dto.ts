@@ -9,12 +9,14 @@ import {
   IsUUID,
 } from 'class-validator';
 import { type CurrencyCode } from '@/database/types/db';
+import { Trim } from '@/common/decorators/trim.decorator';
 
 export class CreateSubscriptionDto {
   @IsNotEmpty({ message: 'Category ID is required.' })
   @IsUUID('4', { message: 'Category ID must be a valid UUID v4.' })
   categoryId!: string;
 
+  @Trim()
   @IsNotEmpty({ message: 'Merchant name is required.' })
   @IsString({ message: 'Merchant name must be a string.' })
   merchantName!: string;
@@ -33,6 +35,7 @@ export class CreateSubscriptionDto {
   currency?: CurrencyCode;
 
   @IsOptional()
+  @Trim()
   @IsString({ message: 'Description must be a string.' })
   description?: string;
 

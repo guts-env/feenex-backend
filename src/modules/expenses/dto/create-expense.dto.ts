@@ -17,8 +17,10 @@ import {
   type CurrencyCode,
   type ExpenseStatus,
 } from '@/database/types/db';
+import { Trim } from '@/common/decorators/trim.decorator';
 
 export class ExpenseItemDto {
+  @Trim()
   @IsNotEmpty()
   @IsString()
   name!: string;
@@ -34,6 +36,7 @@ export class ExpenseItemDto {
 
 class BaseExpenseDto {
   @IsOptional()
+  @Trim()
   @IsString()
   description?: string;
 
@@ -67,6 +70,7 @@ export class CreateExpenseDto extends BaseExpenseDto {
   @IsBoolean()
   isSubscription?: boolean;
 
+  @Trim()
   @IsNotEmpty()
   @IsString()
   merchantName!: string;
@@ -101,6 +105,7 @@ export class CreateExpenseDto extends BaseExpenseDto {
   llmResultId?: string;
 
   @IsOptional()
+  @Trim()
   @IsString()
   orNumber?: string;
 
@@ -118,6 +123,7 @@ export class CreateManualExpenseDto extends BaseExpenseDto {
   @IsUUID('4')
   categoryId!: string;
 
+  @Trim()
   @IsNotEmpty()
   @IsString()
   merchantName!: string;
@@ -149,6 +155,7 @@ export class CreateManualExpenseDto extends BaseExpenseDto {
   isSubscription?: boolean;
 
   @IsOptional()
+  @Trim()
   @IsString()
   orNumber?: string;
 
